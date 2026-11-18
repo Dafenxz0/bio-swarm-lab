@@ -125,8 +125,12 @@ impl World {
             total_births: 0,
             total_bursts: 0,
             total_neutralized: 0,
-            cell_buckets: (0..HASH_W * HASH_H).map(|_| Vec::with_capacity(8)).collect(),
-            virion_buckets: (0..HASH_W * HASH_H).map(|_| Vec::with_capacity(8)).collect(),
+            cell_buckets: (0..HASH_W * HASH_H)
+                .map(|_| Vec::with_capacity(8))
+                .collect(),
+            virion_buckets: (0..HASH_W * HASH_H)
+                .map(|_| Vec::with_capacity(8))
+                .collect(),
             id_to_idx: Vec::with_capacity(MAX_CELLS),
             cells_buf: Vec::with_capacity(MAX_CELLS * CELL_STRIDE),
             virions_buf: Vec::with_capacity(MAX_VIRIONS * VIRION_STRIDE),
