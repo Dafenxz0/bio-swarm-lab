@@ -1,0 +1,4 @@
+/target/
+/_site/
+*.swp
+.DS_Store

@@ -1,0 +1,15 @@
+[package]
+name = "bio_swarm_lab"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Biological cell lab, pathogen/immunity, thermal ecology, and per-cell neural swarm simulator in Rust/WASM"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

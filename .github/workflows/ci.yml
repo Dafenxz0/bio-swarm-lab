@@ -1,0 +1,95 @@
+name: CI & GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (host)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Clippy (wasm32)
+        run: cargo clippy --target wasm32-unknown-unknown --all-targets -- -D warnings
+
+      - name: Run Rust test suite
+        run: cargo test --verbose
+
+      - name: Verify JS syntax and UI contract tests
+        run: |
+          node --check web/app.js
+          node --check web/renderer.js
+          node --check web/inspector.js
+          node --test web/tests/ui_contract.test.mjs
+
+      - name: Build release WASM
+        run: cargo build --target wasm32-unknown-unknown --release
+
+      - name: Stage Pages site and smoke-test WASM in Node
+        run: |
+          mkdir -p _site
+          cp web/index.html web/styles.css web/app.js web/renderer.js web/inspector.js _site/
+          cp target/wasm32-unknown-unknown/release/bio_swarm_lab.wasm _site/bio_swarm_lab.wasm
+          node -e '
+            const fs = require("fs");
+            const bytes = fs.readFileSync("_site/bio_swarm_lab.wasm");
+            WebAssembly.instantiate(bytes, {}).then(({ instance }) => {
+              const ex = instance.exports;
+              const ptr = ex.sim_create(42, 0);
+              for (let i = 0; i < 10; i++) ex.sim_step(ptr, 1.0);
+              const pop = ex.sim_cell_count(ptr);
+              const tick = ex.sim_tick(ptr);
+              ex.sim_destroy(ptr);
+              if (pop <= 0 || tick !== 10) process.exit(1);
+              console.log("WASM smoke OK: tick=" + tick + " cells=" + pop);
+            });
+          '
+
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
