@@ -2402,13 +2402,27 @@ impl World {
                         let dy = cb.y - ca_y;
                         let max_bind = ca_r + cb.radius + 12.0;
                         if dx * dx + dy * dy <= max_bind * max_bind {
-                            let cb_id = cb.id;
-                            let cb_r = cb.radius;
-                            let stiff = (ca_stiff + mb.adhesion_stiffness) * 0.5;
-                            self.push_bond_pair(ca_id, cb_id, ca_r + cb_r + 3.5, stiff, 0.0);
-                            local_links += 1;
-                            if self.bonds.len() >= MAX_BONDS || local_links >= ca_max {
-                                break;
+                            let exists = self.bonds.iter().any(|b| {
+                                (b.a_id == ca_id && b.b_id == cb.id)
+                                    || (b.a_id == cb.id && b.b_id == ca_id)
+                            });
+                            if !exists {
+                                let r_len = (ca_r + cb.radius + 3.5).clamp(10.0, 34.0);
+                                let stiff =
+                                    ((ca_stiff + mb.adhesion_stiffness) * 0.5).clamp(0.15, 1.0);
+                                self.bonds.push(AdhesionBond {
+                                    a_id: ca_id,
+                                    b_id: cb.id,
+                                    rest_len: r_len,
+                                    stiffness: stiff,
+                                    preferred_angle: 0.0,
+                                    last_vascular_flow: 0.0,
+                                    last_synaptic_flow: 0.0,
+                                });
+                                local_links += 1;
+                                if self.bonds.len() >= MAX_BONDS || local_links >= ca_max {
+                                    break;
+                                }
                             }
                         }
                     }
