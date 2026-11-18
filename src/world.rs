@@ -822,18 +822,7 @@ impl World {
         let max_atp = role.base_max_atp();
         let mut brain = NeuralNet::for_role(role, &mut self.rng);
         let dummy_in = [
-            0.65,
-            0.70,
-            0.0,
-            0.0,
-            0.15,
-            0.0,
-            0.25,
-            0.78,
-            0.0,
-            0.0,
-            0.12,
-            0.15,
+            0.65, 0.70, 0.0, 0.0, 0.15, 0.0, 0.25, 0.78, 0.0, 0.0, 0.12, 0.15,
         ];
         brain.forward(dummy_in, mode.hue_shift);
         brain.classify_cognitive_state(role, 0.78, 0.0, 0);
@@ -1404,9 +1393,7 @@ impl World {
                     let o_infected = o.is_actively_infected();
                     let is_target_or_threat = match role {
                         CellRole::Immunocyte => o_infected || o_role == CellRole::Phagocyte,
-                        CellRole::Phagocyte => {
-                            o.lineage_id != c_lineage && o.organism_id != org_id
-                        }
+                        CellRole::Phagocyte => o.lineage_id != c_lineage && o.organism_id != org_id,
                         _ => o_role == CellRole::Phagocyte || o_infected,
                     };
                     if is_target_or_threat && d2 < nearest_enemy_d2 {
@@ -1617,8 +1604,9 @@ impl World {
             let rx = (c.x + next_vx * dt).clamp(c.radius, WORLD_W - c.radius);
             let ry = (c.y + next_vy * dt).clamp(c.radius, WORLD_H - c.radius);
             let cr = c.radius;
-            let (res_x, res_y, mut res_vx, mut res_vy) =
-                self.fields.resolve_wall_collision(rx, ry, next_vx, next_vy, cr);
+            let (res_x, res_y, mut res_vx, mut res_vy) = self
+                .fields
+                .resolve_wall_collision(rx, ry, next_vx, next_vy, cr);
             if res_x <= c.radius + 0.5 || res_x >= WORLD_W - c.radius - 0.5 {
                 res_vx *= -0.7;
             }
@@ -2197,11 +2185,10 @@ impl World {
                             let crispr_shield = if has_crispr { 0.72 } else { 0.0 };
                             let armor_shield =
                                 (c.mode().membrane_armor + c.keratin_shield).min(0.90) * 0.25;
-                            let effective_res = (c.mode().immune_resistance
-                                + crispr_shield
-                                + armor_shield)
-                                .min(0.97)
-                                * (1.0 - strain.immune_evasion * 0.65);
+                            let effective_res =
+                                (c.mode().immune_resistance + crispr_shield + armor_shield)
+                                    .min(0.97)
+                                    * (1.0 - strain.immune_evasion * 0.65);
                             let p_infect =
                                 (strain.infectivity * (1.0 - effective_res)).clamp(0.02, 0.98);
 

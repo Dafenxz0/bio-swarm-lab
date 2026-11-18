@@ -54,9 +54,7 @@ fn recurrent_neural_forward_memory_and_cognitive_states() {
 fn hebbian_synaptic_plasticity_adapts_weights() {
     let mut rng = Rng::new(101);
     let mut net = NeuralNet::for_role(CellRole::Phagocyte, &mut rng);
-    let inputs: [f32; NN_INPUTS] = [
-        0.6, 0.5, 0.0, 0.2, 0.4, 0.85, 0.1, 0.75, 0.0, 0.0, 0.3, 0.1,
-    ];
+    let inputs: [f32; NN_INPUTS] = [0.6, 0.5, 0.0, 0.2, 0.4, 0.85, 0.1, 0.75, 0.0, 0.0, 0.3, 0.1];
     net.forward(inputs, 0.0);
     let w2_before = net.w2;
 

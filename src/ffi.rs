@@ -552,11 +552,7 @@ pub unsafe extern "C" fn sim_mutation_rule_count(ptr: *const World) -> u32 {
 /// # Safety
 /// `ptr` must be a valid mutable pointer to `World`.
 #[no_mangle]
-pub unsafe extern "C" fn sim_trigger_mutation(
-    ptr: *mut World,
-    cell_id: u32,
-    rule_id: u32,
-) -> u32 {
+pub unsafe extern "C" fn sim_trigger_mutation(ptr: *mut World, cell_id: u32, rule_id: u32) -> u32 {
     if let Some(w) = ptr.as_mut() {
         w.trigger_mutation(cell_id, rule_id)
     } else {
