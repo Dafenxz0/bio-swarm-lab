@@ -833,6 +833,7 @@ impl World {
         // Update cell physics, ATP, HP, and viral incubation.
         let mut should_divide = false;
         let mut should_lyse_strain: Option<VirusStrain> = None;
+        let current_cells_len = self.cells.len();
 
         {
             let c = &mut self.cells[idx];
@@ -912,7 +913,7 @@ impl World {
                 && c.divide_cooldown == 0
                 && c.atp >= divide_thresh
                 && outputs[2] > 0.05
-                && self.cells.len() + new_offspring.len() < MAX_CELLS
+                && current_cells_len + new_offspring.len() < MAX_CELLS
             {
                 should_divide = true;
                 c.atp *= 0.48;
