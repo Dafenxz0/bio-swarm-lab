@@ -91,7 +91,7 @@ function defaultStrainSlot(slot) {
   }
 }
 
-export function simulateEmbryoPreview(modes, maxNodes = 22) {
+export function simulateEmbryoPreview(modes, maxNodes = 16) {
   const nodes = [];
   const bonds = [];
   const roleRad = (r) => ROLE_META[Math.max(0, Math.min(11, r | 0))] ? 6.8 + ((r % 3) * 0.7) : 7.2;
@@ -111,55 +111,74 @@ export function simulateEmbryoPreview(modes, maxNodes = 22) {
   while (queue.length > 0 && nodes.length < maxNodes) {
     const idx = queue.shift();
     const u = nodes[idx];
-    if (u.depth >= 3) continue;
     const m = modes[u.modeIdx] || modes[0];
     if (!m) continue;
-    if (!m.keepAdhesion && !m.bondChildren && m.childA === u.modeIdx && m.childB === u.modeIdx) {
-      continue;
+    if (u.depth >= 1 && !m.keepAdhesion && !m.bondChildren) continue;
+    if (m.childA === u.modeIdx && m.childB === u.modeIdx) continue;
+
+    const singleBranch =
+      m.childA === u.modeIdx ||
+      m.childB === u.modeIdx ||
+      (m.childA === m.childB && Math.abs(m.splitAngle) < 0.08);
+    const maxD = singleBranch ? 7 : 3;
+    if (u.depth >= maxD) continue;
+
+    const branches = [];
+    if (singleBranch) {
+      const target = m.childB === u.modeIdx ? m.childA : m.childB;
+      const rel = m.childB === u.modeIdx ? m.splitAngle : -m.splitAngle;
+      branches.push([target, rel]);
+    } else if (u.depth === 0 && m.childA !== m.childB && Math.abs(m.splitAngle) < 0.08) {
+      branches.push([m.childA, 0], [m.childB, Math.PI]);
+    } else {
+      branches.push([m.childA, m.splitAngle], [m.childB, -m.splitAngle]);
     }
 
-    const rA = roleRad(modes[m.childA]?.role ?? m.role);
-    const rB = roleRad(modes[m.childB]?.role ?? m.role);
-    const distA = u.r + rA + 2.5;
-    const distB = u.r + rB + 2.5;
-    const angA = u.ang + m.splitAngle;
-    const angB = u.ang - m.splitAngle + Math.PI * 0.65;
-
-    const idxA = nodes.length;
-    nodes.push({
-      x: u.x + Math.cos(angA) * distA,
-      y: u.y + Math.sin(angA) * distA,
-      ang: angA,
-      modeIdx: m.childA,
-      role: modes[m.childA]?.role ?? m.role,
-      r: rA,
-      depth: u.depth + 1,
-      hueShift: (modes[m.childA]?.hueDeg ?? 0) / 360,
-    });
-    if (m.keepAdhesion) {
-      bonds.push([idx, idxA, distA, m.adhesion]);
-    }
-    queue.push(idxA);
-
-    if (nodes.length < maxNodes) {
-      const idxB = nodes.length;
+    const spawned = [];
+    for (const [cMode, relAng] of branches) {
+      if (nodes.length >= maxNodes) break;
+      const cm = modes[cMode] || m;
+      const rC = roleRad(cm.role ?? m.role);
+      const angC = u.ang + relAng;
+      let distC = u.r + rC + 2.4;
+      let px = u.x + Math.cos(angC) * distC;
+      let py = u.y + Math.sin(angC) * distC;
+      for (let step = 0; step < 3; step++) {
+        const hit = nodes.some((p) => {
+          const dx = px - p.x;
+          const dy = py - p.y;
+          return dx * dx + dy * dy < (rC + p.r + 1.0) ** 2;
+        });
+        if (!hit) break;
+        distC += 5.0;
+        px = u.x + Math.cos(angC) * distC;
+        py = u.y + Math.sin(angC) * distC;
+      }
+      const cIdx = nodes.length;
       nodes.push({
-        x: u.x + Math.cos(angB) * distB,
-        y: u.y + Math.sin(angB) * distB,
-        ang: angB,
-        modeIdx: m.childB,
-        role: modes[m.childB]?.role ?? m.role,
-        r: rB,
+        x: px,
+        y: py,
+        ang: angC,
+        modeIdx: cMode,
+        role: cm.role ?? m.role,
+        r: rC,
         depth: u.depth + 1,
-        hueShift: (modes[m.childB]?.hueDeg ?? 0) / 360,
+        hueShift: (cm.hueDeg ?? 0) / 360,
       });
       if (m.keepAdhesion) {
-        bonds.push([idx, idxB, distB, m.adhesion]);
+        bonds.push([idx, cIdx, Math.hypot(px - u.x, py - u.y), m.adhesion]);
       }
-      if (m.bondChildren) {
-        bonds.push([idxA, idxB, rA + rB + 2.5, m.adhesion]);
+      queue.push(cIdx);
+      spawned.push([cIdx, px, py, rC]);
+    }
+
+    if (m.bondChildren && spawned.length === 2) {
+      const [iA, ax, ay] = spawned[0];
+      const [iB, bx, by] = spawned[1];
+      const dab = Math.hypot(bx - ax, by - ay);
+      if (dab > 10 && dab < 34) {
+        bonds.push([iA, iB, dab, m.adhesion]);
       }
-      queue.push(idxB);
     }
   }
 
@@ -228,8 +247,22 @@ export class StudioController {
     this.bindMutationTab();
     this.bindVirusTab();
     this.bindGenomeModal();
+    this.syncGrowthLimitToWasm();
     this.refreshMutationRulesList();
     this.refreshMutationLog(true);
+  }
+
+  syncGrowthLimitToWasm() {
+    if (typeof this.ex.sim_set_growth_limit !== "function") return;
+    const enEl = document.getElementById("growth-limit-enabled");
+    const orgEl = document.getElementById("growth-max-org");
+    const cellsEl = document.getElementById("growth-max-cells");
+    const enabled = enEl ? enEl.checked : true;
+    const maxOrg = orgEl ? Number(orgEl.value) | 0 : 16;
+    const maxCells = cellsEl ? Number(cellsEl.value) | 0 : 280;
+    if (orgEl) orgEl.disabled = !enabled;
+    if (cellsEl) cellsEl.disabled = !enabled;
+    this.ex.sim_set_growth_limit(this.ptr, enabled ? 1 : 0, maxOrg, maxCells);
   }
 
   readModeFromWasm(genomeId, modeIdx) {
@@ -590,6 +623,15 @@ export class StudioController {
     if (randBtn) {
       randBtn.addEventListener("click", () => this.randomizeGenome());
     }
+
+    for (const id of ["growth-limit-enabled", "growth-max-org", "growth-max-cells"]) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener(el.type === "range" ? "input" : "change", () => {
+          this.syncGrowthLimitToWasm();
+        });
+      }
+    }
   }
 
   // --- TAB 2: MUTATION FORGE ---
@@ -770,6 +812,7 @@ export class StudioController {
   }
 
   syncAfterScenarioReset() {
+    this.syncGrowthLimitToWasm();
     if (this.ex.sim_mutation_rule_count(this.ptr) > 0 && this.ruleSlots.every((r) => !r.enabled)) {
       this.ruleSlots = [0, 1, 2, 3].map((i) => defaultRuleSlot(i));
       this.syncRuleSlotToUI();

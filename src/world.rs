@@ -25,9 +25,9 @@ pub const GRID_W: usize = 120;
 pub const GRID_H: usize = 80;
 pub const FIELD_CELL_SIZE: f32 = 10.0;
 
-pub const MAX_CELLS: usize = 900;
-pub const MAX_VIRIONS: usize = 1400;
-pub const MAX_BONDS: usize = 1400;
+pub const MAX_CELLS: usize = 520;
+pub const MAX_VIRIONS: usize = 700;
+pub const MAX_BONDS: usize = 900;
 pub const MAX_MUTATION_LOG: usize = 64;
 
 pub const CELL_STRIDE: usize = 20;
@@ -163,9 +163,14 @@ pub struct World {
     pub total_neutralized: u32,
     pub total_mutations: u32,
 
+    pub growth_limit_enabled: bool,
+    pub max_org_cells: u16,
+    pub max_total_cells: u16,
+
     cell_buckets: Vec<Vec<usize>>,
     virion_buckets: Vec<Vec<usize>>,
     id_to_idx: Vec<(u32, usize)>,
+    org_counts: Vec<(u32, u16)>,
 
     pub cells_buf: Vec<f32>,
     pub virions_buf: Vec<f32>,
@@ -201,6 +206,9 @@ impl World {
             total_bursts: 0,
             total_neutralized: 0,
             total_mutations: 0,
+            growth_limit_enabled: true,
+            max_org_cells: 16,
+            max_total_cells: 280,
             cell_buckets: (0..HASH_W * HASH_H)
                 .map(|_| Vec::with_capacity(12))
                 .collect(),
@@ -208,6 +216,7 @@ impl World {
                 .map(|_| Vec::with_capacity(12))
                 .collect(),
             id_to_idx: Vec::with_capacity(MAX_CELLS),
+            org_counts: Vec::with_capacity(128),
             cells_buf: Vec::with_capacity(MAX_CELLS * CELL_STRIDE),
             virions_buf: Vec::with_capacity(MAX_VIRIONS * VIRION_STRIDE),
             bonds_buf: Vec::with_capacity(MAX_BONDS * BOND_STRIDE),
@@ -269,48 +278,48 @@ impl World {
         match scenario {
             // 0: Conscious Reef & Apex Leviathans
             0 => {
-                self.fields.reset(25.0, 0.68);
-                self.fields.nutrient_floor = 0.54;
+                self.fields.reset(25.0, 0.56);
+                self.fields.nutrient_floor = 0.28;
                 self.fields
                     .add_thermal_source(240.0, 220.0, 140.0, 38.0, 0.14);
                 self.fields
                     .add_thermal_source(960.0, 580.0, 140.0, 14.0, 0.14);
                 self.fields.add_light_source(600.0, 220.0, 260.0, 1.25);
 
-                // Spawn multi-mode conscious organisms + single-role support colonies
-                self.spawn_organism(2, 380.0, 340.0, 6, 95.0); // Solar Reef Symbiont
-                self.spawn_organism(2, 820.0, 440.0, 6, 95.0);
-                self.spawn_organism(5, 600.0, 540.0, 5, 90.0); // Segmented Muscle Worm
-                self.spawn_organism(3, 520.0, 240.0, 5, 85.0); // Swarm Valkyrie
-                self.spawn_organism(1, 240.0, 540.0, 3, 75.0); // Apex Leviathan
-                self.spawn_organism(4, 920.0, 240.0, 4, 80.0); // Macrophage Sentinel
-                self.spawn_role_cluster(600.0, 380.0, CellRole::Photocyte, 18, 180.0);
-                self.spawn_role_cluster(600.0, 420.0, CellRole::Scavenger, 8, 160.0);
+                // Spawn articulated multi-mode conscious organisms + support colonies
+                self.spawn_organism(2, 380.0, 340.0, 2, 110.0); // Solar Reef Symbiont
+                self.spawn_organism(2, 820.0, 440.0, 2, 110.0);
+                self.spawn_organism(5, 600.0, 540.0, 2, 120.0); // Segmented Muscle Worm
+                self.spawn_organism(3, 520.0, 240.0, 2, 100.0); // Swarm Valkyrie
+                self.spawn_organism(1, 240.0, 540.0, 1, 50.0); // Apex Leviathan
+                self.spawn_organism(4, 920.0, 240.0, 1, 50.0); // Macrophage Sentinel
+                self.spawn_role_cluster(600.0, 380.0, CellRole::Photocyte, 10, 180.0);
+                self.spawn_role_cluster(600.0, 420.0, CellRole::Scavenger, 6, 160.0);
             }
             // 1: Multi-Strain Pandemic vs Adaptive Immunity
             1 => {
-                self.fields.reset(27.0, 0.70);
-                self.fields.nutrient_floor = 0.56;
+                self.fields.reset(27.0, 0.58);
+                self.fields.nutrient_floor = 0.30;
                 self.fields.add_light_source(600.0, 360.0, 300.0, 1.15);
 
-                self.spawn_organism(2, 580.0, 400.0, 7, 130.0); // Solar Reef Symbiont
-                self.spawn_organism(4, 600.0, 400.0, 8, 140.0); // Macrophage Sentinel
-                self.spawn_organism(3, 440.0, 340.0, 5, 110.0); // Swarm Valkyrie
-                self.spawn_role_cluster(600.0, 400.0, CellRole::Immunocyte, 18, 170.0);
-                self.spawn_role_cluster(620.0, 400.0, CellRole::Photocyte, 22, 190.0);
+                self.spawn_organism(2, 580.0, 400.0, 2, 140.0); // Solar Reef Symbiont
+                self.spawn_organism(4, 600.0, 400.0, 2, 140.0); // Macrophage Sentinel
+                self.spawn_organism(3, 440.0, 340.0, 2, 120.0); // Swarm Valkyrie
+                self.spawn_role_cluster(600.0, 400.0, CellRole::Immunocyte, 10, 170.0);
+                self.spawn_role_cluster(620.0, 400.0, CellRole::Photocyte, 12, 190.0);
 
                 // Unleash Lytic, Lysogenic, and Oncogenic strains
                 let s0 = VirusStrain::preset(self.alloc_strain_id(), 0);
                 let s1 = VirusStrain::preset(self.alloc_strain_id(), 1);
                 let s2 = VirusStrain::preset(self.alloc_strain_id(), 2);
-                self.spawn_virion_cloud(360.0, 300.0, s0, 38, 65.0);
-                self.spawn_virion_cloud(840.0, 480.0, s1, 34, 65.0);
-                self.spawn_virion_cloud(600.0, 220.0, s2, 28, 55.0);
+                self.spawn_virion_cloud(360.0, 300.0, s0, 34, 65.0);
+                self.spawn_virion_cloud(840.0, 480.0, s1, 30, 65.0);
+                self.spawn_virion_cloud(600.0, 220.0, s2, 26, 55.0);
             }
             // 2: Hydrothermal Extremophiles & Cryo
             2 => {
-                self.fields.reset(24.0, 0.62);
-                self.fields.nutrient_floor = 0.50;
+                self.fields.reset(24.0, 0.52);
+                self.fields.nutrient_floor = 0.28;
                 self.fields
                     .add_thermal_source(210.0, 260.0, 175.0, 84.0, 0.28);
                 self.fields
@@ -332,11 +341,11 @@ impl World {
                 }
                 let tw_id = thermo_worm.id;
                 self.genomes.push(thermo_worm);
-                self.spawn_organism(tw_id, 250.0, 400.0, 7, 110.0);
+                self.spawn_organism(tw_id, 250.0, 400.0, 2, 110.0);
 
                 // Temperate center organisms
-                self.spawn_organism(2, 600.0, 400.0, 6, 110.0);
-                self.spawn_organism(3, 600.0, 380.0, 5, 110.0);
+                self.spawn_organism(2, 600.0, 400.0, 2, 110.0);
+                self.spawn_organism(3, 600.0, 380.0, 2, 110.0);
 
                 // Cryophile multi-mode organisms on right
                 let mut cryo_reef = OrganismGenome::preset(1);
@@ -347,12 +356,12 @@ impl World {
                 }
                 let cr_id = cryo_reef.id;
                 self.genomes.push(cryo_reef);
-                self.spawn_organism(cr_id, 930.0, 400.0, 7, 110.0);
+                self.spawn_organism(cr_id, 930.0, 400.0, 2, 110.0);
             }
             // 3: Mutagenic Petri Maze (Walls & Evolution)
             3 => {
-                self.fields.reset(25.0, 0.68);
-                self.fields.nutrient_floor = 0.55;
+                self.fields.reset(25.0, 0.56);
+                self.fields.nutrient_floor = 0.28;
                 // Construct Petri chamber maze walls with open gates
                 self.fields.set_wall_rect(380.0, 60.0, 410.0, 520.0, 1);
                 self.fields.set_wall_rect(790.0, 280.0, 820.0, 740.0, 1);
@@ -369,29 +378,29 @@ impl World {
                     self.fields.step(1.0);
                 }
 
-                self.spawn_organism(2, 200.0, 280.0, 6, 85.0);
-                self.spawn_organism(5, 220.0, 580.0, 5, 85.0);
-                self.spawn_organism(3, 600.0, 580.0, 5, 85.0);
-                self.spawn_organism(4, 980.0, 500.0, 5, 85.0);
-                self.spawn_organism(1, 980.0, 240.0, 3, 70.0);
+                self.spawn_organism(2, 200.0, 280.0, 2, 85.0);
+                self.spawn_organism(5, 220.0, 580.0, 2, 85.0);
+                self.spawn_organism(3, 600.0, 580.0, 2, 85.0);
+                self.spawn_organism(4, 980.0, 500.0, 2, 85.0);
+                self.spawn_organism(1, 980.0, 240.0, 1, 55.0);
             }
             // 4: Multicellular Locomotion & Combat
             4 => {
-                self.fields.reset(26.0, 0.72);
-                self.fields.nutrient_floor = 0.56;
+                self.fields.reset(26.0, 0.58);
+                self.fields.nutrient_floor = 0.30;
                 self.fields.add_light_source(600.0, 400.0, 320.0, 1.25);
 
-                self.spawn_organism(5, 320.0, 320.0, 6, 95.0); // Segmented Muscle Worm
-                self.spawn_organism(5, 880.0, 480.0, 6, 95.0);
-                self.spawn_organism(1, 340.0, 540.0, 4, 80.0); // Apex Leviathan
-                self.spawn_organism(3, 840.0, 260.0, 6, 90.0); // Swarm Valkyrie
-                self.spawn_organism(4, 600.0, 400.0, 5, 90.0); // Macrophage Sentinel
-                self.spawn_organism(2, 600.0, 400.0, 5, 100.0); // Solar Reef Symbiont
+                self.spawn_organism(5, 320.0, 320.0, 2, 95.0); // Segmented Muscle Worm
+                self.spawn_organism(5, 880.0, 480.0, 2, 95.0);
+                self.spawn_organism(1, 340.0, 540.0, 2, 90.0); // Apex Leviathan
+                self.spawn_organism(3, 840.0, 260.0, 2, 90.0); // Swarm Valkyrie
+                self.spawn_organism(4, 600.0, 400.0, 1, 60.0); // Macrophage Sentinel
+                self.spawn_organism(2, 600.0, 400.0, 1, 60.0); // Solar Reef Symbiont
             }
             // 5: Blank Petri Sandbox
             _ => {
-                self.fields.reset(25.0, 0.72);
-                self.fields.nutrient_floor = 0.58;
+                self.fields.reset(25.0, 0.58);
+                self.fields.nutrient_floor = 0.30;
                 self.fields.add_light_source(600.0, 400.0, 340.0, 1.20);
             }
         }
@@ -606,6 +615,7 @@ impl World {
         let mut last_id = 0;
         let n = count.clamp(1, 24);
         let eff_spread = spread.max(8.0);
+        let max_body = (self.max_org_cells as usize).clamp(4, 16);
 
         for _ in 0..n {
             if self.cells.len() >= MAX_CELLS {
@@ -613,113 +623,188 @@ impl World {
             }
             let ang = self.rng.range_f32(0.0, TAU);
             let dist = self.rng.next_f32().sqrt() * eff_spread;
-            let ox = (cx + ang.cos() * dist).clamp(24.0, WORLD_W - 24.0);
-            let oy = (cy + ang.sin() * dist).clamp(24.0, WORLD_H - 24.0);
+            let ox = (cx + ang.cos() * dist).clamp(42.0, WORLD_W - 42.0);
+            let oy = (cy + ang.sin() * dist).clamp(42.0, WORLD_H - 42.0);
             if self.fields.is_wall_at(ox, oy) {
                 continue;
             }
 
             let org_id = self.alloc_organism_id();
-            let m0_idx = template.initial_mode.min((MAX_MODES - 1) as u8);
+            let active_modes = template.active_modes.max(1);
+            let m0_idx = template.initial_mode.min(active_modes - 1);
             let m0 = *template.mode(m0_idx);
             let heading = self.rng.range_f32(0.0, TAU);
 
-            // If multi-mode adhesive creature, spawn an articulated 3-cell differentiated organism
-            // (M_init -> child_a_mode + child_b_mode) already linked by cytoskeletal bonds!
+            let root_id = self.push_cell_from_genome(
+                ox,
+                oy,
+                heading,
+                m0_idx,
+                template.clone(),
+                org_id,
+                lineage_id,
+                0,
+                1,
+            );
+            last_id = root_id;
+
+            // Articulated multi-cell morphogenesis BFS when adhesive multi-mode development is enabled
             if template.active_modes > 1 && (m0.keep_adhesion_parent || m0.bond_children) {
-                let ma_idx = m0.child_a_mode.min(template.active_modes.saturating_sub(1));
-                let mb_idx = m0.child_b_mode.min(template.active_modes.saturating_sub(1));
-                let ma = *template.mode(ma_idx);
-                let mb = *template.mode(mb_idx);
+                struct EmbryoNode {
+                    id: u32,
+                    x: f32,
+                    y: f32,
+                    ang: f32,
+                    rad: f32,
+                    mode_idx: u8,
+                    depth: u8,
+                }
+                let mut placed: Vec<EmbryoNode> = Vec::with_capacity(max_body);
+                placed.push(EmbryoNode {
+                    id: root_id,
+                    x: ox,
+                    y: oy,
+                    ang: heading,
+                    rad: m0.role.base_radius(),
+                    mode_idx: m0_idx,
+                    depth: 0,
+                });
+                let mut q_idx = 0usize;
 
-                let root_id = self.push_cell_from_genome(
-                    ox,
-                    oy,
-                    heading,
-                    m0_idx,
-                    template.clone(),
-                    org_id,
-                    lineage_id,
-                    0,
-                    1,
-                );
-                last_id = root_id;
+                while q_idx < placed.len() && placed.len() < max_body && self.cells.len() < MAX_CELLS {
+                    let u = EmbryoNode {
+                        id: placed[q_idx].id,
+                        x: placed[q_idx].x,
+                        y: placed[q_idx].y,
+                        ang: placed[q_idx].ang,
+                        rad: placed[q_idx].rad,
+                        mode_idx: placed[q_idx].mode_idx,
+                        depth: placed[q_idx].depth,
+                    };
+                    q_idx += 1;
 
-                if self.cells.len() < MAX_CELLS {
-                    let ang_a = wrap_angle(heading + m0.split_angle);
-                    let dist_a = m0.role.base_radius() + ma.role.base_radius() + 2.5;
-                    let ax = (ox + ang_a.cos() * dist_a).clamp(16.0, WORLD_W - 16.0);
-                    let ay = (oy + ang_a.sin() * dist_a).clamp(16.0, WORLD_H - 16.0);
-                    let id_a = self.push_cell_from_genome(
-                        ax,
-                        ay,
-                        ang_a,
-                        ma_idx,
-                        template.clone(),
-                        org_id,
-                        lineage_id,
-                        root_id,
-                        2,
-                    );
-                    last_id = id_a;
-                    self.push_bond_pair(
-                        root_id,
-                        id_a,
-                        dist_a,
-                        (m0.adhesion_stiffness + ma.adhesion_stiffness) * 0.5,
-                        m0.split_angle,
-                    );
+                    let m = *template.mode(u.mode_idx);
+                    if u.depth >= 1 && !m.keep_adhesion_parent && !m.bond_children {
+                        continue;
+                    }
+                    let ma_idx = m.child_a_mode.min(active_modes - 1);
+                    let mb_idx = m.child_b_mode.min(active_modes - 1);
+                    if ma_idx == u.mode_idx && mb_idx == u.mode_idx {
+                        continue;
+                    }
 
-                    if self.cells.len() < MAX_CELLS {
-                        let ang_b = wrap_angle(heading - m0.split_angle + PI * 0.65);
-                        let dist_b = m0.role.base_radius() + mb.role.base_radius() + 2.5;
-                        let bx = (ox + ang_b.cos() * dist_b).clamp(16.0, WORLD_W - 16.0);
-                        let by = (oy + ang_b.sin() * dist_b).clamp(16.0, WORLD_H - 16.0);
-                        let id_b = self.push_cell_from_genome(
-                            bx,
-                            by,
-                            ang_b,
-                            mb_idx,
+                    let single_branch = ma_idx == u.mode_idx
+                        || mb_idx == u.mode_idx
+                        || (ma_idx == mb_idx && m.split_angle.abs() < 0.08);
+                    let max_d = if single_branch { 7 } else { 3 };
+                    if u.depth >= max_d {
+                        continue;
+                    }
+
+                    let mut branches: [(u8, f32, bool); 2] = [(0, 0.0, false); 2];
+                    if single_branch {
+                        let target = if mb_idx == u.mode_idx { ma_idx } else { mb_idx };
+                        let rel = if mb_idx == u.mode_idx {
+                            m.split_angle
+                        } else {
+                            -m.split_angle
+                        };
+                        branches[0] = (target, rel, true);
+                    } else if u.depth == 0 && ma_idx != mb_idx && m.split_angle.abs() < 0.08 {
+                        branches[0] = (ma_idx, 0.0, true);
+                        branches[1] = (mb_idx, PI, true);
+                    } else {
+                        branches[0] = (ma_idx, m.split_angle, true);
+                        branches[1] = (mb_idx, -m.split_angle, true);
+                    }
+
+                    let mut spawned_children: [(u32, f32, f32, f32, bool); 2] =
+                        [(0, 0.0, 0.0, 0.0, false); 2];
+                    for (bi, &(c_mode, rel_ang, enabled)) in branches.iter().enumerate() {
+                        if !enabled || placed.len() >= max_body || self.cells.len() >= MAX_CELLS {
+                            continue;
+                        }
+                        let cm = *template.mode(c_mode);
+                        let c_rad = cm.role.base_radius();
+                        let abs_ang = wrap_angle(u.ang + rel_ang);
+                        let base_dist = u.rad + c_rad + 2.4;
+                        let mut dist_cur = base_dist;
+                        let mut px = (u.x + abs_ang.cos() * dist_cur).clamp(16.0, WORLD_W - 16.0);
+                        let mut py = (u.y + abs_ang.sin() * dist_cur).clamp(16.0, WORLD_H - 16.0);
+
+                        // Nudge outward if overlapping another embryonic cell in this body
+                        for _ in 0..3 {
+                            let hit = placed.iter().any(|p| {
+                                let dx = px - p.x;
+                                let dy = py - p.y;
+                                let min_d = c_rad + p.rad + 1.0;
+                                dx * dx + dy * dy < min_d * min_d
+                            });
+                            if !hit {
+                                break;
+                            }
+                            dist_cur += 5.0;
+                            px = (u.x + abs_ang.cos() * dist_cur).clamp(16.0, WORLD_W - 16.0);
+                            py = (u.y + abs_ang.sin() * dist_cur).clamp(16.0, WORLD_H - 16.0);
+                        }
+                        if self.fields.is_wall_at(px, py) {
+                            continue;
+                        }
+
+                        let cid = self.push_cell_from_genome(
+                            px,
+                            py,
+                            abs_ang,
+                            c_mode,
                             template.clone(),
                             org_id,
                             lineage_id,
-                            root_id,
-                            2,
+                            u.id,
+                            (u.depth + 2) as u32,
                         );
-                        last_id = id_b;
-                        self.push_bond_pair(
-                            root_id,
-                            id_b,
-                            dist_b,
-                            (m0.adhesion_stiffness + mb.adhesion_stiffness) * 0.5,
-                            -m0.split_angle,
-                        );
-                        if m0.bond_children {
-                            let dx = bx - ax;
-                            let dy = by - ay;
-                            let dab = (dx * dx + dy * dy).sqrt().max(12.0);
+                        if let Some(cell_mut) = self.cells.last_mut() {
+                            cell_mut.divide_cooldown = 120;
+                        }
+                        last_id = cid;
+                        let stiff = ((m.adhesion_stiffness + cm.adhesion_stiffness) * 0.5)
+                            .clamp(0.45, 0.98);
+                        let actual_dx = px - u.x;
+                        let actual_dy = py - u.y;
+                        let rest = (actual_dx * actual_dx + actual_dy * actual_dy)
+                            .sqrt()
+                            .clamp(12.0, 32.0);
+                        self.push_bond_pair(u.id, cid, rest, stiff, rel_ang);
+
+                        placed.push(EmbryoNode {
+                            id: cid,
+                            x: px,
+                            y: py,
+                            ang: abs_ang,
+                            rad: c_rad,
+                            mode_idx: c_mode,
+                            depth: u.depth + 1,
+                        });
+                        spawned_children[bi] = (cid, px, py, cm.adhesion_stiffness, true);
+                    }
+
+                    if m.bond_children && spawned_children[0].4 && spawned_children[1].4 {
+                        let dx = spawned_children[1].1 - spawned_children[0].1;
+                        let dy = spawned_children[1].2 - spawned_children[0].2;
+                        let dab = (dx * dx + dy * dy).sqrt();
+                        if dab > 10.0 && dab < 34.0 {
+                            let stiff = ((spawned_children[0].3 + spawned_children[1].3) * 0.5)
+                                .clamp(0.45, 0.95);
+                            let rel_ab = wrap_angle(dy.atan2(dx) - u.ang);
                             self.push_bond_pair(
-                                id_a,
-                                id_b,
+                                spawned_children[0].0,
+                                spawned_children[1].0,
                                 dab,
-                                (ma.adhesion_stiffness + mb.adhesion_stiffness) * 0.5,
-                                0.0,
+                                stiff,
+                                rel_ab,
                             );
                         }
                     }
                 }
-            } else {
-                last_id = self.push_cell_from_genome(
-                    ox,
-                    oy,
-                    heading,
-                    m0_idx,
-                    template.clone(),
-                    org_id,
-                    lineage_id,
-                    0,
-                    1,
-                );
             }
         }
 
@@ -1259,8 +1344,9 @@ impl World {
         // 1. Environmental diffusion, vents, solar light, nutrients, pheromones, toxins, mutagen, walls.
         self.fields.step(dt);
 
-        // 2. Rebuild spatial hash grids for O(N) neighbor queries.
+        // 2. Rebuild spatial hash grids & organism size index for O(N log N) cap checks.
         self.rebuild_spatial_hashes();
+        self.rebuild_org_counts();
 
         // 3. Sensory inputs + Recurrent Neural Brain + Hebbian learning + Q10 physiology + viral cycles.
         let n_cells = self.cells.len();
@@ -1352,6 +1438,15 @@ impl World {
             )
         };
         let role = mode.role;
+        let org_size = Self::lookup_org_count(&self.org_counts, org_id);
+        let growth_limit_enabled = self.growth_limit_enabled;
+        let max_org_cells = self.max_org_cells;
+        let global_cap = if growth_limit_enabled {
+            (self.max_total_cells as usize).min(MAX_CELLS)
+        } else {
+            MAX_CELLS
+        };
+        let under_global_cap = self.cells.len() < global_cap;
 
         let local_temp = self.fields.sample_temp(cx, cy);
         let local_light = self.fields.sample_light(cx, cy);
@@ -1736,7 +1831,29 @@ impl World {
             } else {
                 mode.split_atp_threshold(c.max_atp)
             };
+            let is_terminal_somatic =
+                mode.child_a_mode == mode_idx && mode.child_b_mode == mode_idx;
+            let allow_growth = if !growth_limit_enabled || force_oncogenic_divide {
+                under_global_cap
+            } else if org_size >= max_org_cells {
+                // Mature organism: stop somatic division; allow solitary bud only at peak ATP if space remains
+                under_global_cap
+                    && !is_terminal_somatic
+                    && (!mode.keep_adhesion_parent && !mode.bond_children)
+                    && atp_ratio >= 0.88
+                    && crowding < 0.45
+            } else if org_size >= 3
+                && is_terminal_somatic
+                && (mode.keep_adhesion_parent || mode.bond_children)
+            {
+                // Differentiated terminal organ inside an existing body stays structural
+                false
+            } else {
+                under_global_cap && (crowding < 0.72 || org_size < 3)
+            };
+
             if c.alive
+                && allow_growth
                 && can_divide_infection
                 && c.divide_cooldown == 0
                 && c.atp >= split_thresh
@@ -1744,8 +1861,8 @@ impl World {
             {
                 should_divide = true;
                 c.divide_cooldown = match role {
-                    CellRole::Stemocyte => 42,
-                    _ => 78,
+                    CellRole::Stemocyte => 75,
+                    _ => 125,
                 };
                 c.signal_flags |= SIGNAL_DIVIDE;
             }
@@ -1841,14 +1958,26 @@ impl World {
     }
 
     fn execute_mitoses(&mut self, pending_mitoses: Vec<PendingMitosis>) {
+        if pending_mitoses.is_empty() {
+            return;
+        }
+        let global_cap = if self.growth_limit_enabled {
+            (self.max_total_cells as usize).min(MAX_CELLS)
+        } else {
+            MAX_CELLS
+        };
         let rules_snapshot = self.mutation_rules.clone();
         for pm in pending_mitoses {
-            if self.cells.len() >= MAX_CELLS {
+            if self.cells.len() >= global_cap {
                 break;
             }
             if !self.cells[pm.parent_idx].alive {
                 continue;
             }
+
+            let parent_org_id = self.cells[pm.parent_idx].organism_id;
+            let parent_org_size = Self::lookup_org_count(&self.org_counts, parent_org_id);
+            let detach_bud = self.growth_limit_enabled && parent_org_size >= self.max_org_cells;
 
             let active_modes = self.cells[pm.parent_idx].genome.active_modes.max(1);
             let mode_a = pm.child_a_mode % active_modes;
@@ -1861,7 +1990,7 @@ impl World {
             let role_a = self.cells[pm.parent_idx].role();
             self.cells[pm.parent_idx].radius = role_a.base_radius();
             self.cells[pm.parent_idx].max_atp = role_a.base_max_atp();
-            if !pm.keep_adhesion_parent {
+            if !pm.keep_adhesion_parent && !detach_bud {
                 let pid = pm.parent_id;
                 self.bonds.retain(|b| b.a_id != pid && b.b_id != pid);
             }
@@ -1877,7 +2006,7 @@ impl World {
             let mut_rate = child_genome.mode(mode_b).mutation_rate * drift_scale;
             child_brain.mutate(&mut self.rng, mut_rate, 0.22);
 
-            let child_org_id = if pm.keep_adhesion_parent || pm.bond_children {
+            let child_org_id = if !detach_bud && (pm.keep_adhesion_parent || pm.bond_children) {
                 parent.organism_id
             } else {
                 self.alloc_organism_id()
@@ -2282,7 +2411,7 @@ impl World {
             self.cells[ib].vx -= fx;
             self.cells[ib].vy -= fy;
 
-            // Myocyte contractile muscle flexing perpendicular to the bond axis!
+            // Angular restoring spring toward preferred_angle + Myocyte contractile muscle flexing!
             let role_a = self.cells[ia].role();
             let role_b = self.cells[ib].role();
             let flex_a = if role_a == CellRole::Myocyte {
@@ -2295,13 +2424,22 @@ impl World {
             } else {
                 self.cells[ib].myocyte_flex * 0.25
             };
-            let net_flex = (flex_a - flex_b) * 0.36 * bond.stiffness * dt;
+            let ia_ang = self.cells[ia].angle;
+            let desired_ang = wrap_angle(ia_ang + bond.preferred_angle);
+            let cur_ang = dy.atan2(dx);
+            let ang_err = wrap_angle(desired_ang - cur_ang);
+            let ortho_restore = ang_err * 0.14 * bond.stiffness * dt;
+            let myo_wave = (flex_a - flex_b) * 0.36 * bond.stiffness * dt;
+            let net_flex = myo_wave - ortho_restore;
             let tx = -ny * net_flex;
             let ty = nx * net_flex;
             self.cells[ia].vx += tx;
             self.cells[ia].vy += ty;
             self.cells[ib].vx -= tx;
             self.cells[ib].vy -= ty;
+            // Gently align appendage angle with body geometry
+            let align_err = wrap_angle(cur_ang - self.cells[ib].angle);
+            self.cells[ib].angle = wrap_angle(self.cells[ib].angle + align_err * 0.08 * dt);
 
             // Vascular ATP sharing across tissue junctions (amplified by Vascularocytes)
             let vasc_a = self.cells[ia].mode().vascular_share;
@@ -2350,13 +2488,13 @@ impl World {
         }
         self.bonds = kept_bonds;
 
-        // Form new adhesion bonds between nearby compatible adhesive cells.
+        // Repair fragmented adhesion bonds ONLY within the same organism (never fuse separate creatures)
         let n = self.cells.len();
         for i in 0..n {
             if self.bonds.len() >= MAX_BONDS {
                 break;
             }
-            let (ca_id, ca_x, ca_y, ca_r, ca_lin, ca_stiff, ca_max, ca_b) = {
+            let (ca_id, ca_x, ca_y, ca_r, ca_org, ca_stiff, ca_max, ca_b) = {
                 let ca = &self.cells[i];
                 if !ca.alive {
                     continue;
@@ -2367,13 +2505,13 @@ impl World {
                     ca.x,
                     ca.y,
                     ca.radius,
-                    ca.lineage_id,
+                    ca.organism_id,
                     m.adhesion_stiffness,
                     m.max_bonds,
                     ca.bonded_count,
                 )
             };
-            if ca_stiff <= 0.42 || ca_b >= ca_max {
+            if ca_stiff <= 0.48 || ca_b >= ca_max {
                 continue;
             }
             let gx = ((ca_x / HASH_CELL) as isize).clamp(0, HASH_W as isize - 1) as usize;
@@ -2393,15 +2531,16 @@ impl World {
                         let cb = &self.cells[j];
                         let mb = cb.mode();
                         if !cb.alive
-                            || cb.lineage_id != ca_lin
-                            || mb.adhesion_stiffness <= 0.42
+                            || cb.organism_id != ca_org
+                            || (local_links > 0 && cb.bonded_count > 0)
+                            || mb.adhesion_stiffness <= 0.48
                             || cb.bonded_count >= mb.max_bonds
                         {
                             continue;
                         }
                         let dx = cb.x - ca_x;
                         let dy = cb.y - ca_y;
-                        let max_bind = ca_r + cb.radius + 12.0;
+                        let max_bind = ca_r + cb.radius + 10.0;
                         if dx * dx + dy * dy <= max_bind * max_bind {
                             let exists = self.bonds.iter().any(|b| {
                                 (b.a_id == ca_id && b.b_id == cb.id)
@@ -2416,7 +2555,7 @@ impl World {
                                     b_id: cb.id,
                                     rest_len: r_len,
                                     stiffness: stiff,
-                                    preferred_angle: 0.0,
+                                    preferred_angle: wrap_angle(dy.atan2(dx) - self.cells[i].angle),
                                     last_vascular_flow: 0.0,
                                     last_synaptic_flow: 0.0,
                                 });
@@ -2430,6 +2569,35 @@ impl World {
                 }
             }
         }
+    }
+
+    fn rebuild_org_counts(&mut self) {
+        self.org_counts.clear();
+        for c in &self.cells {
+            if c.alive {
+                self.org_counts.push((c.organism_id, 1));
+            }
+        }
+        self.org_counts.sort_unstable_by_key(|&(id, _)| id);
+        let mut write = 0usize;
+        for read in 0..self.org_counts.len() {
+            let (oid, cnt) = self.org_counts[read];
+            if write > 0 && self.org_counts[write - 1].0 == oid {
+                self.org_counts[write - 1].1 = self.org_counts[write - 1].1.saturating_add(cnt);
+            } else {
+                self.org_counts[write] = (oid, cnt);
+                write += 1;
+            }
+        }
+        self.org_counts.truncate(write);
+    }
+
+    #[inline]
+    fn lookup_org_count(counts: &[(u32, u16)], org_id: u32) -> u16 {
+        counts
+            .binary_search_by_key(&org_id, |&(id, _)| id)
+            .ok()
+            .map_or(1, |pos| counts[pos].1)
     }
 
     fn rebuild_spatial_hashes(&mut self) {

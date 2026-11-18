@@ -381,171 +381,163 @@ impl OrganismGenome {
         }
 
         match preset_id {
-            // 0: Apex Leviathan — cephalized predator with Senseocyte eyes, Neurocyte brain,
-            // Phagocyte jaws, Myocyte trunk segments, Keratinocyte armor, and Flagellocyte twin tails.
+            // 0: Apex Leviathan — 11-cell streamlined bilateral predator with Senseocyte nose,
+            // paired Phagocyte jaws, Neurocyte brain, Vascularocyte heart, Myocyte trunk,
+            // Keratinocyte flank plates, and twin Flagellocyte propulsion tails.
             0 => {
-                // M0: Stemocyte embryo splits into M1 (anterior head) and M2 (posterior brain/trunk)
-                modes[0] = CellMode::default_for_role(CellRole::Stemocyte, 0);
-                modes[0].split_mass = 0.60;
+                // M0: Neurocyte brain -> anterior Senseocyte head (M1) + posterior Vascularocyte heart (M2)
+                modes[0] = CellMode::default_for_role(CellRole::Neurocyte, 0);
+                modes[0].split_mass = 0.72;
                 modes[0].split_angle = 0.0;
                 modes[0].child_a_mode = 1;
                 modes[0].child_b_mode = 2;
                 modes[0].keep_adhesion_parent = true;
-                modes[0].bond_children = true;
-                modes[0].adhesion_stiffness = 0.85;
+                modes[0].bond_children = false;
+                modes[0].adhesion_stiffness = 0.88;
                 modes[0].max_bonds = 5;
 
-                // M1: Senseocyte anterior eye & prey finder -> differentiates into Phagocyte jaws (M3) + Senseocyte (M1)
+                // M1: Senseocyte head -> twin forward Phagocyte jaws (M3) at +/-0.56 rad
                 modes[1] = CellMode::default_for_role(CellRole::Senseocyte, 1);
-                modes[1].split_mass = 0.66;
-                modes[1].split_angle = 0.42;
+                modes[1].split_mass = 0.74;
+                modes[1].split_angle = 0.56;
                 modes[1].child_a_mode = 3;
-                modes[1].child_b_mode = 1;
+                modes[1].child_b_mode = 3;
                 modes[1].keep_adhesion_parent = true;
                 modes[1].bond_children = true;
-                modes[1].adhesion_stiffness = 0.82;
+                modes[1].adhesion_stiffness = 0.86;
                 modes[1].max_bonds = 4;
 
-                // M2: Neurocyte central brain -> spawns Myocyte mid-body (M4) while staying Neurocyte (M2)
-                modes[2] = CellMode::default_for_role(CellRole::Neurocyte, 2);
-                modes[2].split_mass = 0.64;
-                modes[2].split_angle = PI;
-                modes[2].child_a_mode = 2;
+                // M2: Vascularocyte heart -> twin posterior Myocyte muscle flanks (M4) at +/-0.48 rad
+                modes[2] = CellMode::default_for_role(CellRole::Vascularocyte, 2);
+                modes[2].split_mass = 0.74;
+                modes[2].split_angle = 0.48;
+                modes[2].child_a_mode = 4;
                 modes[2].child_b_mode = 4;
                 modes[2].keep_adhesion_parent = true;
                 modes[2].bond_children = true;
                 modes[2].adhesion_stiffness = 0.88;
-                modes[2].max_bonds = 6;
+                modes[2].max_bonds = 5;
 
-                // M3: Phagocyte raptorial jaws -> splits into Phagocyte (M3) + Keratinocyte flank guard (M6)
+                // M3: Phagocyte raptorial jaw (terminal sensory-guided effector)
                 modes[3] = CellMode::default_for_role(CellRole::Phagocyte, 3);
-                modes[3].split_mass = 0.72;
-                modes[3].split_angle = -0.52;
+                modes[3].split_mass = 0.84;
+                modes[3].split_angle = 0.0;
                 modes[3].child_a_mode = 3;
-                modes[3].child_b_mode = 6;
+                modes[3].child_b_mode = 3;
                 modes[3].keep_adhesion_parent = true;
-                modes[3].bond_children = true;
-                modes[3].adhesion_stiffness = 0.80;
+                modes[3].bond_children = false;
+                modes[3].adhesion_stiffness = 0.82;
                 modes[3].max_bonds = 4;
 
-                // M4: Myocyte contractile torso -> branches into Flagellocyte thruster (M5) + Vascularocyte core (M7)
+                // M4: Myocyte contractile trunk -> Flagellocyte tail (M5) + Keratinocyte armor flank (M6)
                 modes[4] = CellMode::default_for_role(CellRole::Myocyte, 4);
-                modes[4].split_mass = 0.68;
-                modes[4].split_angle = 0.35;
+                modes[4].split_mass = 0.78;
+                modes[4].split_angle = 0.38;
                 modes[4].child_a_mode = 5;
-                modes[4].child_b_mode = 7;
+                modes[4].child_b_mode = 6;
                 modes[4].keep_adhesion_parent = true;
                 modes[4].bond_children = true;
-                modes[4].adhesion_stiffness = 0.84;
+                modes[4].adhesion_stiffness = 0.86;
                 modes[4].max_bonds = 5;
 
-                // M5: Flagellocyte propulsion tail -> buds new M0 free-swimming juvenile spore when rich!
+                // M5: Flagellocyte twin propulsion tail (terminal thruster)
                 modes[5] = CellMode::default_for_role(CellRole::Flagellocyte, 5);
-                modes[5].split_mass = 0.78;
-                modes[5].split_angle = PI;
+                modes[5].split_mass = 0.88;
+                modes[5].split_angle = 0.0;
                 modes[5].child_a_mode = 5;
-                modes[5].child_b_mode = 0;
+                modes[5].child_b_mode = 5;
                 modes[5].keep_adhesion_parent = true;
                 modes[5].bond_children = false;
-                modes[5].adhesion_stiffness = 0.76;
+                modes[5].adhesion_stiffness = 0.78;
                 modes[5].max_bonds = 3;
 
-                // M6: Keratinocyte dorsal armor plate
+                // M6: Keratinocyte dorsal armor plate (terminal shield)
                 modes[6] = CellMode::default_for_role(CellRole::Keratinocyte, 6);
-                modes[6].split_mass = 0.84;
-                modes[6].split_angle = 1.10;
+                modes[6].split_mass = 0.88;
+                modes[6].split_angle = 0.0;
                 modes[6].child_a_mode = 6;
-                modes[6].child_b_mode = 5;
+                modes[6].child_b_mode = 6;
                 modes[6].keep_adhesion_parent = true;
-                modes[6].bond_children = true;
+                modes[6].bond_children = false;
                 modes[6].adhesion_stiffness = 0.88;
-                modes[6].max_bonds = 5;
-
-                // M7: Vascularocyte ATP distribution heart
-                modes[7] = CellMode::default_for_role(CellRole::Vascularocyte, 7);
-                modes[7].split_mass = 0.74;
-                modes[7].split_angle = -0.35;
-                modes[7].child_a_mode = 7;
-                modes[7].child_b_mode = 5;
-                modes[7].keep_adhesion_parent = true;
-                modes[7].bond_children = true;
-                modes[7].adhesion_stiffness = 0.86;
-                modes[7].max_bonds = 6;
+                modes[6].max_bonds = 4;
 
                 Self {
                     id: 1,
                     preset_id: 0,
-                    active_modes: 8,
+                    active_modes: 7,
                     initial_mode: 0,
                     modes,
                 }
             }
 
-            // 1: Solar Reef Symbiont — colonial photosynthetic organism with Photocyte leaves,
-            // Vascularocyte stems, Immunocyte patrol nodes, Keratinocyte bark, and Secreocyte mucus glands.
+            // 1: Solar Reef Symbiont — 13-cell radial photosynthetic coral rosette with Vascularocyte core,
+            // Stemocyte branches, Photocyte solar fronds, Immunocyte guardians, and Keratinocyte bark.
             1 => {
-                modes[0] = CellMode::default_for_role(CellRole::Stemocyte, 0);
-                modes[0].split_mass = 0.60;
+                // M0: Vascularocyte central hub -> M1 (upper stalk) + M2 (lower stalk)
+                modes[0] = CellMode::default_for_role(CellRole::Vascularocyte, 0);
+                modes[0].split_mass = 0.72;
                 modes[0].split_angle = 0.0;
                 modes[0].child_a_mode = 1;
                 modes[0].child_b_mode = 2;
                 modes[0].keep_adhesion_parent = true;
-                modes[0].bond_children = true;
-                modes[0].adhesion_stiffness = 0.86;
+                modes[0].bond_children = false;
+                modes[0].adhesion_stiffness = 0.90;
+                modes[0].vascular_share = 0.95;
                 modes[0].max_bonds = 6;
 
-                modes[1] = CellMode::default_for_role(CellRole::Photocyte, 1);
-                modes[1].split_mass = 0.65;
-                modes[1].split_angle = 1.05;
-                modes[1].child_a_mode = 1;
+                // M1 & M2: Stemocyte stalks -> symmetric Photocyte solar fronds (M3) at +/-0.92 rad
+                modes[1] = CellMode::default_for_role(CellRole::Stemocyte, 1);
+                modes[1].split_mass = 0.74;
+                modes[1].split_angle = 0.92;
+                modes[1].child_a_mode = 3;
                 modes[1].child_b_mode = 3;
                 modes[1].keep_adhesion_parent = true;
                 modes[1].bond_children = true;
-                modes[1].adhesion_stiffness = 0.84;
-                modes[1].light_eff = 1.55;
-                modes[1].vascular_share = 0.80;
+                modes[1].adhesion_stiffness = 0.86;
                 modes[1].max_bonds = 5;
 
-                modes[2] = CellMode::default_for_role(CellRole::Vascularocyte, 2);
-                modes[2].split_mass = 0.66;
-                modes[2].split_angle = -1.05;
-                modes[2].child_a_mode = 1;
-                modes[2].child_b_mode = 4;
+                modes[2] = CellMode::default_for_role(CellRole::Stemocyte, 2);
+                modes[2].split_mass = 0.74;
+                modes[2].split_angle = 0.92;
+                modes[2].child_a_mode = 3;
+                modes[2].child_b_mode = 3;
                 modes[2].keep_adhesion_parent = true;
                 modes[2].bond_children = true;
-                modes[2].adhesion_stiffness = 0.88;
-                modes[2].vascular_share = 0.95;
-                modes[2].max_bonds = 6;
+                modes[2].adhesion_stiffness = 0.86;
+                modes[2].max_bonds = 5;
 
-                modes[3] = CellMode::default_for_role(CellRole::Immunocyte, 3);
-                modes[3].split_mass = 0.72;
-                modes[3].split_angle = 0.55;
-                modes[3].child_a_mode = 3;
+                // M3: Photocyte solar leaf -> Immunocyte polyp (M4) + Keratinocyte guard (M5)
+                modes[3] = CellMode::default_for_role(CellRole::Photocyte, 3);
+                modes[3].split_mass = 0.80;
+                modes[3].split_angle = 0.62;
+                modes[3].child_a_mode = 4;
                 modes[3].child_b_mode = 5;
                 modes[3].keep_adhesion_parent = true;
                 modes[3].bond_children = true;
-                modes[3].adhesion_stiffness = 0.80;
+                modes[3].adhesion_stiffness = 0.84;
+                modes[3].light_eff = 1.50;
+                modes[3].vascular_share = 0.82;
                 modes[3].max_bonds = 4;
 
-                modes[4] = CellMode::default_for_role(CellRole::Keratinocyte, 4);
-                modes[4].split_mass = 0.76;
-                modes[4].split_angle = -0.65;
+                // M4: Immunocyte polyp guardian (terminal)
+                modes[4] = CellMode::default_for_role(CellRole::Immunocyte, 4);
+                modes[4].split_mass = 0.86;
                 modes[4].child_a_mode = 4;
-                modes[4].child_b_mode = 1;
+                modes[4].child_b_mode = 4;
                 modes[4].keep_adhesion_parent = true;
-                modes[4].bond_children = true;
-                modes[4].adhesion_stiffness = 0.90;
-                modes[4].max_bonds = 5;
+                modes[4].bond_children = false;
+                modes[4].adhesion_stiffness = 0.82;
+                modes[4].max_bonds = 3;
 
-                modes[5] = CellMode::default_for_role(CellRole::Secreocyte, 5);
-                modes[5].secretion_kind = SECRETION_NUTRIENT_MUCUS;
-                modes[5].split_mass = 0.74;
-                modes[5].split_angle = PI;
+                // M5: Keratinocyte calyx armor (terminal)
+                modes[5] = CellMode::default_for_role(CellRole::Keratinocyte, 5);
+                modes[5].split_mass = 0.88;
                 modes[5].child_a_mode = 5;
-                modes[5].child_b_mode = 0;
+                modes[5].child_b_mode = 5;
                 modes[5].keep_adhesion_parent = true;
                 modes[5].bond_children = false;
-                modes[5].adhesion_stiffness = 0.78;
+                modes[5].adhesion_stiffness = 0.90;
                 modes[5].max_bonds = 4;
 
                 Self {
@@ -557,68 +549,72 @@ impl OrganismGenome {
                 }
             }
 
-            // 2: Swarm Valkyrie — fast cooperative hunter-defender tri-cell / quad-cell craft with
-            // Senseocyte radar, Neurocyte coordinator, Flagellocyte interceptor, Phagocyte lance, and Immunocyte wing.
+            // 2: Swarm Valkyrie — 9-cell swept delta-wing hunter-interceptor with Senseocyte nose,
+            // Neurocyte avionics core, Phagocyte wingtip lances, Immunocyte guards, and Flagellocyte drive.
             2 => {
-                modes[0] = CellMode::default_for_role(CellRole::Senseocyte, 0);
-                modes[0].split_mass = 0.62;
+                // M0: Neurocyte avionics core -> Senseocyte nose (M1) + Flagellocyte thruster (M2)
+                modes[0] = CellMode::default_for_role(CellRole::Neurocyte, 0);
+                modes[0].split_mass = 0.72;
                 modes[0].split_angle = 0.0;
                 modes[0].child_a_mode = 1;
                 modes[0].child_b_mode = 2;
                 modes[0].keep_adhesion_parent = true;
-                modes[0].bond_children = true;
-                modes[0].adhesion_stiffness = 0.82;
+                modes[0].bond_children = false;
+                modes[0].adhesion_stiffness = 0.88;
                 modes[0].max_bonds = 5;
 
-                modes[1] = CellMode::default_for_role(CellRole::Neurocyte, 1);
-                modes[1].split_mass = 0.66;
-                modes[1].split_angle = 0.50;
+                // M1: Senseocyte nose cone -> swept-back delta wings of Phagocyte lances (M3) at +/-1.65 rad
+                modes[1] = CellMode::default_for_role(CellRole::Senseocyte, 1);
+                modes[1].split_mass = 0.74;
+                modes[1].split_angle = 1.65;
                 modes[1].child_a_mode = 3;
-                modes[1].child_b_mode = 4;
+                modes[1].child_b_mode = 3;
                 modes[1].keep_adhesion_parent = true;
                 modes[1].bond_children = true;
-                modes[1].adhesion_stiffness = 0.85;
-                modes[1].max_bonds = 5;
+                modes[1].adhesion_stiffness = 0.84;
+                modes[1].max_bonds = 4;
 
+                // M2: Flagellocyte core engine -> twin rear Secreocyte alarm/chaff pods (M5)
                 modes[2] = CellMode::default_for_role(CellRole::Flagellocyte, 2);
-                modes[2].split_mass = 0.70;
-                modes[2].split_angle = PI;
-                modes[2].child_a_mode = 2;
+                modes[2].split_mass = 0.78;
+                modes[2].split_angle = 0.70;
+                modes[2].child_a_mode = 5;
                 modes[2].child_b_mode = 5;
                 modes[2].keep_adhesion_parent = true;
                 modes[2].bond_children = true;
-                modes[2].adhesion_stiffness = 0.78;
+                modes[2].adhesion_stiffness = 0.82;
                 modes[2].max_bonds = 4;
 
+                // M3: Phagocyte wingtip -> Immunocyte wing-guard (M4) single rear bud
                 modes[3] = CellMode::default_for_role(CellRole::Phagocyte, 3);
-                modes[3].split_mass = 0.72;
-                modes[3].split_angle = -0.45;
-                modes[3].child_a_mode = 3;
-                modes[3].child_b_mode = 2;
+                modes[3].split_mass = 0.80;
+                modes[3].split_angle = 0.45;
+                modes[3].child_a_mode = 4;
+                modes[3].child_b_mode = 3;
                 modes[3].keep_adhesion_parent = true;
-                modes[3].bond_children = true;
-                modes[3].adhesion_stiffness = 0.80;
+                modes[3].bond_children = false;
+                modes[3].adhesion_stiffness = 0.82;
                 modes[3].max_bonds = 4;
 
+                // M4: Immunocyte wing-guard (terminal)
                 modes[4] = CellMode::default_for_role(CellRole::Immunocyte, 4);
-                modes[4].split_mass = 0.74;
-                modes[4].split_angle = 0.65;
+                modes[4].split_mass = 0.86;
                 modes[4].child_a_mode = 4;
-                modes[4].child_b_mode = 0;
+                modes[4].child_b_mode = 4;
                 modes[4].keep_adhesion_parent = true;
                 modes[4].bond_children = false;
-                modes[4].adhesion_stiffness = 0.80;
-                modes[4].max_bonds = 4;
+                modes[4].adhesion_stiffness = 0.82;
+                modes[4].max_bonds = 3;
 
+                // M5: Secreocyte pod (terminal)
                 modes[5] = CellMode::default_for_role(CellRole::Secreocyte, 5);
                 modes[5].secretion_kind = SECRETION_ALARM;
-                modes[5].split_mass = 0.76;
-                modes[5].split_angle = 0.0;
+                modes[5].split_mass = 0.86;
                 modes[5].child_a_mode = 5;
-                modes[5].child_b_mode = 0;
+                modes[5].child_b_mode = 5;
                 modes[5].keep_adhesion_parent = true;
                 modes[5].bond_children = false;
-                modes[5].adhesion_stiffness = 0.75;
+                modes[5].adhesion_stiffness = 0.80;
                 modes[5].max_bonds = 3;
 
                 Self {
@@ -630,69 +626,73 @@ impl OrganismGenome {
                 }
             }
 
-            // 3: Macrophage Sentinel — antiviral & detoxifying immune guardian with Immunocyte core,
-            // Senseocyte pathogen scanner, Secreocyte antibody emitter, Scavenger recycler, and Keratinocyte shell.
+            // 3: Macrophage Sentinel — 11-cell star-armored immune patrol fortress with Immunocyte core,
+            // Senseocyte scanner, Secreocyte antibody emitters, Scavenger arms, and Flagellocyte twin drive.
             3 => {
+                // M0: Immunocyte central core -> Senseocyte bow (M1) + Keratinocyte stern bulkhead (M2)
                 modes[0] = CellMode::default_for_role(CellRole::Immunocyte, 0);
-                modes[0].split_mass = 0.62;
+                modes[0].split_mass = 0.72;
                 modes[0].split_angle = 0.0;
                 modes[0].child_a_mode = 1;
                 modes[0].child_b_mode = 2;
                 modes[0].keep_adhesion_parent = true;
-                modes[0].bond_children = true;
-                modes[0].adhesion_stiffness = 0.84;
+                modes[0].bond_children = false;
+                modes[0].adhesion_stiffness = 0.88;
                 modes[0].max_bonds = 5;
 
+                // M1: Senseocyte bow -> twin Secreocyte antibody arms (M3)
                 modes[1] = CellMode::default_for_role(CellRole::Senseocyte, 1);
-                modes[1].split_mass = 0.66;
-                modes[1].split_angle = 0.60;
-                modes[1].child_a_mode = 0;
+                modes[1].split_mass = 0.74;
+                modes[1].split_angle = 1.05;
+                modes[1].child_a_mode = 3;
                 modes[1].child_b_mode = 3;
                 modes[1].keep_adhesion_parent = true;
                 modes[1].bond_children = true;
-                modes[1].adhesion_stiffness = 0.82;
+                modes[1].adhesion_stiffness = 0.84;
                 modes[1].max_bonds = 4;
 
-                modes[2] = CellMode::default_for_role(CellRole::Secreocyte, 2);
-                modes[2].secretion_kind = SECRETION_ANTIBODY;
-                modes[2].split_mass = 0.68;
-                modes[2].split_angle = -0.60;
-                modes[2].child_a_mode = 2;
-                modes[2].child_b_mode = 4;
+                // M2: Keratinocyte stern shield -> twin Flagellocyte patrol thrusters (M5)
+                modes[2] = CellMode::default_for_role(CellRole::Keratinocyte, 2);
+                modes[2].split_mass = 0.78;
+                modes[2].split_angle = 0.65;
+                modes[2].child_a_mode = 5;
+                modes[2].child_b_mode = 5;
                 modes[2].keep_adhesion_parent = true;
                 modes[2].bond_children = true;
-                modes[2].adhesion_stiffness = 0.82;
-                modes[2].max_bonds = 4;
+                modes[2].adhesion_stiffness = 0.88;
+                modes[2].max_bonds = 5;
 
-                modes[3] = CellMode::default_for_role(CellRole::Flagellocyte, 3);
-                modes[3].split_mass = 0.72;
-                modes[3].split_angle = PI;
-                modes[3].child_a_mode = 3;
-                modes[3].child_b_mode = 0;
+                // M3: Secreocyte antibody emitter -> Scavenger arm (M4) single outward bud
+                modes[3] = CellMode::default_for_role(CellRole::Secreocyte, 3);
+                modes[3].secretion_kind = SECRETION_ANTIBODY;
+                modes[3].split_mass = 0.78;
+                modes[3].split_angle = 0.55;
+                modes[3].child_a_mode = 4;
+                modes[3].child_b_mode = 3;
                 modes[3].keep_adhesion_parent = true;
                 modes[3].bond_children = false;
-                modes[3].adhesion_stiffness = 0.76;
-                modes[3].max_bonds = 3;
+                modes[3].adhesion_stiffness = 0.82;
+                modes[3].max_bonds = 4;
 
+                // M4: Scavenger detoxifier (terminal)
                 modes[4] = CellMode::default_for_role(CellRole::Scavenger, 4);
-                modes[4].split_mass = 0.70;
-                modes[4].split_angle = 0.85;
+                modes[4].split_mass = 0.86;
                 modes[4].child_a_mode = 4;
-                modes[4].child_b_mode = 5;
+                modes[4].child_b_mode = 4;
                 modes[4].keep_adhesion_parent = true;
-                modes[4].bond_children = true;
+                modes[4].bond_children = false;
                 modes[4].adhesion_stiffness = 0.80;
-                modes[4].max_bonds = 4;
+                modes[4].max_bonds = 3;
 
-                modes[5] = CellMode::default_for_role(CellRole::Keratinocyte, 5);
-                modes[5].split_mass = 0.78;
-                modes[5].split_angle = -0.85;
+                // M5: Flagellocyte thruster (terminal)
+                modes[5] = CellMode::default_for_role(CellRole::Flagellocyte, 5);
+                modes[5].split_mass = 0.86;
                 modes[5].child_a_mode = 5;
-                modes[5].child_b_mode = 0;
+                modes[5].child_b_mode = 5;
                 modes[5].keep_adhesion_parent = true;
-                modes[5].bond_children = true;
-                modes[5].adhesion_stiffness = 0.88;
-                modes[5].max_bonds = 5;
+                modes[5].bond_children = false;
+                modes[5].adhesion_stiffness = 0.78;
+                modes[5].max_bonds = 3;
 
                 Self {
                     id: 4,
@@ -703,75 +703,99 @@ impl OrganismGenome {
                 }
             }
 
-            // 4: Segmented Muscle Worm — elongated articulated swimmer driven by Senseocyte head,
-            // Neurocyte pacemaker, alternating Myocyte contractile segments, Photocyte dorsal strip, and Flagellocyte tail.
+            // 4: Segmented Muscle Worm — 9-cell articulated sinuous swimmer driven by Senseocyte nose,
+            // Neurocyte ganglion, chained Myocyte contractile segments, Photocyte dorsal spine, Vascularocyte, & Flagellocyte tail.
             _ => {
-                modes[0] = CellMode::default_for_role(CellRole::Senseocyte, 0);
-                modes[0].split_mass = 0.60;
+                // M0: Neurocyte neck -> Senseocyte head forward (M1) + Myocyte seg1 backward (M2)
+                modes[0] = CellMode::default_for_role(CellRole::Neurocyte, 0);
+                modes[0].split_mass = 0.72;
                 modes[0].split_angle = 0.0;
-                modes[0].child_a_mode = 0;
-                modes[0].child_b_mode = 1;
+                modes[0].child_a_mode = 1;
+                modes[0].child_b_mode = 2;
                 modes[0].keep_adhesion_parent = true;
-                modes[0].bond_children = true;
-                modes[0].adhesion_stiffness = 0.86;
+                modes[0].bond_children = false;
+                modes[0].adhesion_stiffness = 0.90;
                 modes[0].max_bonds = 3;
 
-                modes[1] = CellMode::default_for_role(CellRole::Neurocyte, 1);
-                modes[1].split_mass = 0.62;
-                modes[1].split_angle = 0.12;
-                modes[1].child_a_mode = 2;
-                modes[1].child_b_mode = 3;
+                // M1: Senseocyte snout (terminal head)
+                modes[1] = CellMode::default_for_role(CellRole::Senseocyte, 1);
+                modes[1].split_mass = 0.88;
+                modes[1].split_angle = 0.0;
+                modes[1].child_a_mode = 1;
+                modes[1].child_b_mode = 1;
                 modes[1].keep_adhesion_parent = true;
-                modes[1].bond_children = true;
+                modes[1].bond_children = false;
                 modes[1].adhesion_stiffness = 0.88;
-                modes[1].max_bonds = 4;
+                modes[1].max_bonds = 3;
 
+                // M2..M6: Linear axial spine chain along body axis (child_b_mode == self -> single segment!)
                 modes[2] = CellMode::default_for_role(CellRole::Myocyte, 2);
-                modes[2].split_mass = 0.66;
-                modes[2].split_angle = -0.18;
+                modes[2].split_mass = 0.74;
+                modes[2].split_angle = 0.02;
                 modes[2].child_a_mode = 3;
-                modes[2].child_b_mode = 4;
+                modes[2].child_b_mode = 2;
                 modes[2].keep_adhesion_parent = true;
-                modes[2].bond_children = true;
-                modes[2].adhesion_stiffness = 0.85;
-                modes[2].max_bonds = 4;
+                modes[2].bond_children = false;
+                modes[2].adhesion_stiffness = 0.88;
+                modes[2].max_bonds = 3;
 
                 modes[3] = CellMode::default_for_role(CellRole::Myocyte, 3);
-                modes[3].split_mass = 0.68;
-                modes[3].split_angle = 0.18;
-                modes[3].child_a_mode = 2;
-                modes[3].child_b_mode = 5;
+                modes[3].split_mass = 0.74;
+                modes[3].split_angle = -0.02;
+                modes[3].child_a_mode = 4;
+                modes[3].child_b_mode = 3;
                 modes[3].keep_adhesion_parent = true;
-                modes[3].bond_children = true;
-                modes[3].adhesion_stiffness = 0.85;
-                modes[3].max_bonds = 4;
+                modes[3].bond_children = false;
+                modes[3].adhesion_stiffness = 0.88;
+                modes[3].max_bonds = 3;
 
                 modes[4] = CellMode::default_for_role(CellRole::Photocyte, 4);
                 modes[4].light_eff = 1.45;
                 modes[4].vascular_share = 0.85;
-                modes[4].split_mass = 0.72;
-                modes[4].split_angle = 0.30;
-                modes[4].child_a_mode = 4;
-                modes[4].child_b_mode = 5;
+                modes[4].split_mass = 0.76;
+                modes[4].split_angle = 0.02;
+                modes[4].child_a_mode = 5;
+                modes[4].child_b_mode = 4;
                 modes[4].keep_adhesion_parent = true;
-                modes[4].bond_children = true;
-                modes[4].adhesion_stiffness = 0.82;
-                modes[4].max_bonds = 4;
+                modes[4].bond_children = false;
+                modes[4].adhesion_stiffness = 0.86;
+                modes[4].max_bonds = 3;
 
-                modes[5] = CellMode::default_for_role(CellRole::Flagellocyte, 5);
+                modes[5] = CellMode::default_for_role(CellRole::Myocyte, 5);
                 modes[5].split_mass = 0.76;
-                modes[5].split_angle = PI;
-                modes[5].child_a_mode = 5;
-                modes[5].child_b_mode = 0;
+                modes[5].split_angle = -0.02;
+                modes[5].child_a_mode = 6;
+                modes[5].child_b_mode = 5;
                 modes[5].keep_adhesion_parent = true;
                 modes[5].bond_children = false;
-                modes[5].adhesion_stiffness = 0.78;
+                modes[5].adhesion_stiffness = 0.88;
                 modes[5].max_bonds = 3;
+
+                modes[6] = CellMode::default_for_role(CellRole::Vascularocyte, 6);
+                modes[6].split_mass = 0.78;
+                modes[6].split_angle = 0.0;
+                modes[6].child_a_mode = 7;
+                modes[6].child_b_mode = 6;
+                modes[6].keep_adhesion_parent = true;
+                modes[6].bond_children = false;
+                modes[6].adhesion_stiffness = 0.88;
+                modes[6].max_bonds = 3;
+
+                // M7: Flagellocyte tail (terminal)
+                modes[7] = CellMode::default_for_role(CellRole::Flagellocyte, 7);
+                modes[7].split_mass = 0.88;
+                modes[7].split_angle = 0.0;
+                modes[7].child_a_mode = 7;
+                modes[7].child_b_mode = 7;
+                modes[7].keep_adhesion_parent = true;
+                modes[7].bond_children = false;
+                modes[7].adhesion_stiffness = 0.82;
+                modes[7].max_bonds = 3;
 
                 Self {
                     id: 5,
                     preset_id: 4,
-                    active_modes: 6,
+                    active_modes: 8,
                     initial_mode: 0,
                     modes,
                 }

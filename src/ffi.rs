@@ -594,3 +594,19 @@ pub unsafe extern "C" fn sim_pick_cell(ptr: *mut World, x: f32, y: f32, max_dist
 pub unsafe extern "C" fn sim_selected_cell_id(ptr: *const World) -> u32 {
     ptr.as_ref().map_or(0, |w| w.selected_cell_id)
 }
+
+/// # Safety
+/// `ptr` must be a valid mutable pointer to `World`.
+#[no_mangle]
+pub unsafe extern "C" fn sim_set_growth_limit(
+    ptr: *mut World,
+    enabled: u8,
+    max_org_cells: u32,
+    max_total_cells: u32,
+) {
+    if let Some(w) = ptr.as_mut() {
+        w.growth_limit_enabled = enabled != 0;
+        w.max_org_cells = max_org_cells.clamp(4, 64) as u16;
+        w.max_total_cells = max_total_cells.clamp(40, crate::world::MAX_CELLS as u32) as u16;
+    }
+}

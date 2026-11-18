@@ -608,6 +608,14 @@ fn all_six_scenarios_and_full_ffi_contract_zero_nans() {
         let mem_slice = &insp[54..58];
         assert!(mem_slice.iter().any(|&m| m.abs() > 1e-4));
 
+        // Verify toggleable growth limit caps dish growth and can be disabled
+        ffi::sim_set_growth_limit(ptr, 1, 12, 80);
+        assert!((*ptr).growth_limit_enabled);
+        assert_eq!((*ptr).max_org_cells, 12);
+        assert_eq!((*ptr).max_total_cells, 80);
+        ffi::sim_set_growth_limit(ptr, 0, 16, 280);
+        assert!(!(*ptr).growth_limit_enabled);
+
         ffi::sim_destroy(ptr);
     }
 }

@@ -83,11 +83,13 @@ class BioSwarmApp {
     this.hoveredCellId = 0;
     this.lastFrameTime = performance.now();
     this.fpsEma = 60;
+    this.uiFrameCounter = 0;
 
     this.simCanvas = document.getElementById("sim-canvas");
     this.simCtx = this.simCanvas.getContext("2d");
     this.viewportEl = document.getElementById("canvas-viewport");
     this.hoverTooltip = document.getElementById("hover-tooltip");
+    this.brainPanel = document.getElementById("panel-brain");
     this.brainCanvas = document.getElementById("brain-canvas");
     this.popCanvas = document.getElementById("pop-canvas");
     this.evoCanvas = document.getElementById("evo-sparkline");
@@ -450,7 +452,7 @@ class BioSwarmApp {
         document.querySelectorAll("[data-overlay]").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
         this.updateOverlayLegend();
-        this.renderFrame();
+        this.renderFrame(true);
       });
     });
 
@@ -519,7 +521,7 @@ class BioSwarmApp {
       const pos = this.canvasToWorld(e.clientX, e.clientY);
       this.pointer = { x: pos.x, y: pos.y, down: true, inside: true };
       this.applyToolAt(pos.x, pos.y, true);
-      this.renderFrame();
+      this.renderFrame(true);
     });
 
     this.simCanvas.addEventListener("pointermove", (e) => {
@@ -679,10 +681,13 @@ class BioSwarmApp {
     updateInspectorDOM(insp);
   }
 
-  renderFrame() {
-    const { pixelW, pixelH } = syncCanvasDPR(this.simCanvas, this.worldW, this.worldH, 2.5);
+  renderFrame(forceInspector = false) {
+    const { pixelW, pixelH } = syncCanvasDPR(this.simCanvas, this.worldW, this.worldH, 1.5);
     const fields = this.getFields();
-    renderFieldSurface(this.surface, this.activeOverlay, fields);
+    this.uiFrameCounter = (this.uiFrameCounter + 1) | 0;
+    if (forceInspector || this.activeOverlay !== "biology" || (this.uiFrameCounter & 1) === 0) {
+      renderFieldSurface(this.surface, this.activeOverlay, fields);
+    }
 
     const cellCount = this.ex.sim_cell_count(this.ptr);
     const cells = this.memF32(this.ex.sim_cells_ptr(this.ptr), cellCount * this.cellStride);
@@ -716,9 +721,12 @@ class BioSwarmApp {
     });
 
     this.updateKPIs(stats);
-    this.updateInspectorUI();
-    renderPopulationSparkline(this.popCanvas, this.history);
-    renderEvolutionSparkline(this.evoCanvas, this.history);
+    const brainVisible = this.brainPanel && !this.brainPanel.hidden;
+    if (brainVisible && (forceInspector || (this.uiFrameCounter & 3) === 0)) {
+      this.updateInspectorUI();
+      renderPopulationSparkline(this.popCanvas, this.history);
+      renderEvolutionSparkline(this.evoCanvas, this.history);
+    }
     this.updateCursorHUD();
   }
 

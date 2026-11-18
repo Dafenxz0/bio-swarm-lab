@@ -689,19 +689,24 @@ input[type="range"]:focus-visible {
   border-block-end: 3px solid var(--p-accent);
 }
 
-/* All tabpanels share a single grid cell so hidden="until-found" panels take zero gap space */
+/* Non-overlapping stack so hidden="until-found" panels collapse to 0px and never intercept clicks */
 .tabpanels-stack {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: block;
 }
 
 /* Zero padding/border/margin/background directly on [role="tabpanel"] per modern-web-guidance */
 [role="tabpanel"] {
-  grid-area: 1 / 1;
   min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+[role="tabpanel"][hidden] {
+  pointer-events: none;
+  z-index: 0;
 }
 
 .tabpanel-inner {

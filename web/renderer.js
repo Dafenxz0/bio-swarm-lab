@@ -645,55 +645,64 @@ export function renderWorld(ctx, pixelW, pixelH, worldW, worldH, state) {
   ctx.lineWidth = Math.max(1.2, 1.6 / scale);
   ctx.strokeRect(0, 0, worldW, worldH);
 
-  // 2. Multicellular Adhesion Bonds with animated Vascular ATP Flow & Synaptic Impulse Pulses
+  // 2. Multicellular Tissue Bridges + Batched Adhesion Bonds + Vascular/Synaptic Pulses
   if (bondCount > 0) {
     ctx.lineCap = "round";
+
+    // Outer organic tissue sleeve unifying each organism into a cohesive body
+    ctx.strokeStyle = "rgba(122, 152, 124, 0.24)";
+    ctx.lineWidth = 10.5;
+    ctx.beginPath();
     for (let i = 0; i < bondCount; i++) {
       const o = i * bondStride;
-      const ax = bonds[o];
-      const ay = bonds[o + 1];
-      const bx = bonds[o + 2];
-      const by = bonds[o + 3];
-      const strength = bonds[o + 4];
-      const vascFlow = bonds[o + 5];
-      const synFlow = bonds[o + 6];
+      ctx.moveTo(bonds[o], bonds[o + 1]);
+      ctx.lineTo(bonds[o + 2], bonds[o + 3]);
+    }
+    ctx.stroke();
 
-      ctx.strokeStyle = `rgba(143, 166, 142, ${(0.25 + strength * 0.45).toFixed(2)})`;
-      ctx.lineWidth = 1.4 + strength * 1.9;
-      ctx.beginPath();
-      ctx.moveTo(ax, ay);
-      ctx.lineTo(bx, by);
-      ctx.stroke();
+    // Crisp inner cytoskeletal filaments (batched)
+    ctx.strokeStyle = "rgba(156, 186, 154, 0.62)";
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let i = 0; i < bondCount; i++) {
+      const o = i * bondStride;
+      ctx.moveTo(bonds[o], bonds[o + 1]);
+      ctx.lineTo(bonds[o + 2], bonds[o + 3]);
+    }
+    ctx.stroke();
 
-      // Vascular ATP transfer bead
-      if (Math.abs(vascFlow) > 0.01) {
-        const dir = vascFlow >= 0 ? 1 : -1;
-        const phase = (((tick * 0.09 * dir + i * 0.23) % 1) + 1) % 1;
-        const px = ax + (bx - ax) * phase;
-        const py = ay + (by - ay) * phase;
-        ctx.fillStyle = "rgba(242, 214, 128, 0.88)";
-        ctx.beginPath();
-        ctx.arc(px, py, Math.min(2.6, 1.2 + Math.abs(vascFlow) * 2.4), 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Synaptic impulse flash along bond
-      if (synFlow > 0.04) {
-        const alpha = Math.min(0.95, 0.25 + synFlow * 0.75);
-        ctx.strokeStyle = `rgba(91, 188, 214, ${alpha.toFixed(2)})`;
-        ctx.lineWidth = 1.2 + synFlow * 1.8;
-        ctx.beginPath();
-        ctx.moveTo(ax, ay);
-        ctx.lineTo(bx, by);
-        ctx.stroke();
-
-        const sp = ((tick * 0.22 + i * 0.37) % 1 + 1) % 1;
-        ctx.fillStyle = "#e8fbff";
-        ctx.beginPath();
-        ctx.arc(ax + (bx - ax) * sp, ay + (by - ay) * sp, 1.8 + synFlow * 1.3, 0, Math.PI * 2);
-        ctx.fill();
+    // Active synaptic pathways (batched)
+    ctx.strokeStyle = "rgba(91, 188, 214, 0.68)";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    for (let i = 0; i < bondCount; i++) {
+      const o = i * bondStride;
+      if (bonds[o + 6] > 0.14) {
+        ctx.moveTo(bonds[o], bonds[o + 1]);
+        ctx.lineTo(bonds[o + 2], bonds[o + 3]);
       }
     }
+    ctx.stroke();
+
+    // Animated vascular ATP beads (batched path)
+    ctx.fillStyle = "rgba(242, 214, 128, 0.85)";
+    ctx.beginPath();
+    for (let i = 0; i < bondCount; i++) {
+      const o = i * bondStride;
+      const vascFlow = bonds[o + 5];
+      if (Math.abs(vascFlow) > 0.03) {
+        const ax = bonds[o];
+        const ay = bonds[o + 1];
+        const dir = vascFlow >= 0 ? 1 : -1;
+        const phase = (((tick * 0.09 * dir + i * 0.23) % 1) + 1) % 1;
+        const px = ax + (bonds[o + 2] - ax) * phase;
+        const py = ay + (bonds[o + 3] - ay) * phase;
+        const rad = Math.min(2.4, 1.1 + Math.abs(vascFlow) * 2.2);
+        ctx.moveTo(px + rad, py);
+        ctx.arc(px, py, rad, 0, Math.PI * 2);
+      }
+    }
+    ctx.fill();
   }
 
   // 3. Free Viral Particles colored by Strain Hue & Strategy (Lytic icosahedron, Lysogenic ring, Oncogenic spiked)

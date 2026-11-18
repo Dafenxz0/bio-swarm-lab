@@ -435,6 +435,26 @@
                   </div>
                 </div>
 
+                <fieldset class="checkbox-fieldset">
+                  <legend>Growth &amp; body-size cap</legend>
+                  <label class="check-label" style="margin-bottom: 4px;">
+                    <input type="checkbox" id="growth-limit-enabled" checked />
+                    <span>Limit organism &amp; dish growth</span>
+                  </label>
+                  <div class="slider-stack" style="margin-top: 2px;">
+                    <div class="slider-row">
+                      <label for="growth-max-org">Max cells / body</label>
+                      <input id="growth-max-org" type="range" min="4" max="32" step="1" value="16" data-out="val-growth-org" />
+                      <span id="val-growth-org" class="slider-val">16</span>
+                    </div>
+                    <div class="slider-row">
+                      <label for="growth-max-cells">Dish cell limit</label>
+                      <input id="growth-max-cells" type="range" min="60" max="500" step="20" value="280" data-out="val-growth-cells" />
+                      <span id="val-growth-cells" class="slider-val">280</span>
+                    </div>
+                  </div>
+                </fieldset>
+
                 <div class="action-stack">
                   <button type="button" id="btn-spawn-creature" class="btn btn-primary full-width">Spawn active creature</button>
                   <div class="btn-row">
