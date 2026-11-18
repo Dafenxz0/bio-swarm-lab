@@ -671,7 +671,10 @@ impl World {
                 });
                 let mut q_idx = 0usize;
 
-                while q_idx < placed.len() && placed.len() < max_body && self.cells.len() < MAX_CELLS {
+                while q_idx < placed.len()
+                    && placed.len() < max_body
+                    && self.cells.len() < MAX_CELLS
+                {
                     let u = EmbryoNode {
                         id: placed[q_idx].id,
                         x: placed[q_idx].x,
