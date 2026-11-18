@@ -507,6 +507,7 @@ pub unsafe extern "C" fn sim_inject_custom_virus(
 
 /// # Safety
 /// `ptr` must be a valid mutable pointer to `World`.
+#[allow(clippy::too_many_arguments)]
 #[no_mangle]
 pub unsafe extern "C" fn sim_upsert_mutation_rule(
     ptr: *mut World,

@@ -1063,6 +1063,7 @@ impl World {
         self.inject_strain(sid, x, y, count, spread)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn upsert_mutation_rule(
         &mut self,
         rule_id: u32,
@@ -1704,7 +1705,7 @@ impl World {
                             // Hijack neural mitosis bias & trigger periodic oncogenic genome/brain mutation!
                             c.brain.b2[2] = (c.brain.b2[2] + 0.15 * dt).clamp(-1.0, 2.2);
                             force_oncogenic_divide = c.atp >= c.max_atp * 0.45;
-                            if c.age % 20 == 0 {
+                            if c.age.is_multiple_of(20) {
                                 oncogenic_mut_trigger = true;
                             }
                             if c.incubation_progress >= 1.35 {
@@ -1755,9 +1756,9 @@ impl World {
             let mut trigger_to_run: Option<(u8, f32)> = None;
             if oncogenic_mut_trigger {
                 trigger_to_run = Some((MUT_TRIGGER_DIRECT_ONLY, 1.0));
-            } else if local_mutagen > 0.16 && (self.tick + c_id) % 18 == 0 {
+            } else if local_mutagen > 0.16 && (self.tick + c_id).is_multiple_of(18) {
                 trigger_to_run = Some((MUT_TRIGGER_ON_MUTAGEN_FIELD, local_mutagen));
-            } else if stress.abs() > 0.30 && (self.tick + c_id) % 24 == 0 {
+            } else if stress.abs() > 0.30 && (self.tick + c_id).is_multiple_of(24) {
                 trigger_to_run = Some((MUT_TRIGGER_ON_THERMAL_STRESS, stress.abs()));
             }
 
