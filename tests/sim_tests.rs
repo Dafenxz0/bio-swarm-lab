@@ -2,12 +2,12 @@ use bio_swarm_lab::ffi;
 use bio_swarm_lab::fields::EnvFields;
 use bio_swarm_lab::genome::{CellMode, CellRole, OrganismGenome};
 use bio_swarm_lab::mutation::{
-    MutationRule, MUT_TARGET_ALL, MUT_TARGET_DIFFERENTIATION, MUT_TARGET_NEURAL,
-    MUT_TRIGGER_DIRECT_ONLY, MUT_TRIGGER_ON_MUTAGEN_FIELD,
+    MUT_TARGET_ALL, MUT_TARGET_DIFFERENTIATION, MUT_TARGET_NEURAL, MUT_TRIGGER_DIRECT_ONLY,
+    MUT_TRIGGER_ON_MUTAGEN_FIELD,
 };
 use bio_swarm_lab::neural::{CognitiveState, NeuralNet, NN_INPUTS, NN_MEMORY, NN_OUTPUTS};
 use bio_swarm_lab::rng::Rng;
-use bio_swarm_lab::virus::{ViralStrategy, VirusStrain, ALL_ROLES_MASK};
+use bio_swarm_lab::virus::{ViralStrategy, ALL_ROLES_MASK};
 use bio_swarm_lab::world::{
     World, BOND_STRIDE, CELL_STRIDE, INSPECTOR_LEN, MUTATION_LOG_STRIDE, STATS_LEN, VIRION_STRIDE,
 };

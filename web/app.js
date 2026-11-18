@@ -160,13 +160,24 @@ class BioSwarmApp {
     const panels = Array.from(tabsRoot.querySelectorAll('[role="tabpanel"]'));
     if (!tablist || tabs.length === 0) return;
 
+    const hasFocusGroup = Object.hasOwn(HTMLElement.prototype, "focusGroup");
+    if (hasFocusGroup) {
+      for (const tab of tabs) tab.removeAttribute("tabindex");
+    } else {
+      for (const tab of tabs) {
+        tab.tabIndex = tab.getAttribute("aria-selected") === "true" ? 0 : -1;
+      }
+    }
+
     const selectTab = (targetTab, shouldScroll = true) => {
       const targetPanelId = `panel-${targetTab.dataset.tab}`;
       for (const tab of tabs) {
         const selected = tab === targetTab;
         tab.setAttribute("aria-selected", selected ? "true" : "false");
-        tab.tabIndex = selected ? 0 : -1;
         tab.toggleAttribute("focusgroupstart", selected);
+        if (!hasFocusGroup) {
+          tab.tabIndex = selected ? 0 : -1;
+        }
       }
       for (const panel of panels) {
         const active = panel.id === targetPanelId;
@@ -200,7 +211,7 @@ class BioSwarmApp {
 
     // Keyboard roving fallback when focusgroup is not natively supported
     tablist.addEventListener("keydown", (e) => {
-      if (Object.hasOwn(HTMLElement.prototype, "focusGroup")) return;
+      if (hasFocusGroup) return;
       const current = document.activeElement?.closest?.('[role="tab"]');
       const idx = tabs.indexOf(current);
       if (idx === -1) return;
