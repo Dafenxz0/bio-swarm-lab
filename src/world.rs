@@ -154,8 +154,10 @@ impl World {
             0 => {
                 self.fields.reset(25.0, 0.62);
                 self.fields.nutrient_floor = 0.48;
-                self.fields.add_thermal_source(220.0, 220.0, 120.0, 44.0, 0.14);
-                self.fields.add_thermal_source(980.0, 580.0, 120.0, 8.0, 0.14);
+                self.fields
+                    .add_thermal_source(220.0, 220.0, 120.0, 44.0, 0.14);
+                self.fields
+                    .add_thermal_source(980.0, 580.0, 120.0, 8.0, 0.14);
 
                 self.spawn_cluster(300.0, 400.0, CellRole::Producer, 34, 210.0, None);
                 self.spawn_cluster(600.0, 400.0, CellRole::Producer, 28, 260.0, None);
@@ -193,10 +195,14 @@ impl World {
                 self.fields.reset(24.0, 0.56);
                 self.fields.nutrient_floor = 0.45;
                 // Hydrothermal vents on left, Cryo glacial pockets on right.
-                self.fields.add_thermal_source(200.0, 250.0, 170.0, 86.0, 0.28);
-                self.fields.add_thermal_source(230.0, 580.0, 150.0, 78.0, 0.25);
-                self.fields.add_thermal_source(980.0, 240.0, 165.0, -18.0, 0.28);
-                self.fields.add_thermal_source(950.0, 570.0, 155.0, -14.0, 0.24);
+                self.fields
+                    .add_thermal_source(200.0, 250.0, 170.0, 86.0, 0.28);
+                self.fields
+                    .add_thermal_source(230.0, 580.0, 150.0, 78.0, 0.25);
+                self.fields
+                    .add_thermal_source(980.0, 240.0, 165.0, -18.0, 0.28);
+                self.fields
+                    .add_thermal_source(950.0, 570.0, 155.0, -14.0, 0.24);
                 // Warm up initial fields immediately
                 for _ in 0..8 {
                     self.fields.step(1.0);
@@ -211,7 +217,14 @@ impl World {
                 let mut thermo_rep = Genome::default_for_role(CellRole::Replicator, &mut self.rng);
                 thermo_rep.t_opt = 68.0;
                 thermo_rep.t_tol = 22.0;
-                self.spawn_cluster(260.0, 420.0, CellRole::Replicator, 12, 120.0, Some(thermo_rep));
+                self.spawn_cluster(
+                    260.0,
+                    420.0,
+                    CellRole::Replicator,
+                    12,
+                    120.0,
+                    Some(thermo_rep),
+                );
 
                 // Temperate bridge cells in center
                 self.spawn_cluster(600.0, 400.0, CellRole::Producer, 26, 150.0, None);
@@ -237,12 +250,26 @@ impl World {
                 let mut reef_prod = Genome::default_for_role(CellRole::Producer, &mut self.rng);
                 reef_prod.adhesion = 0.85;
                 reef_prod.membrane_armor = 0.42;
-                self.spawn_cluster(420.0, 320.0, CellRole::Producer, 26, 75.0, Some(reef_prod.clone()));
+                self.spawn_cluster(
+                    420.0,
+                    320.0,
+                    CellRole::Producer,
+                    26,
+                    75.0,
+                    Some(reef_prod.clone()),
+                );
                 self.spawn_cluster(760.0, 460.0, CellRole::Producer, 26, 75.0, Some(reef_prod));
 
                 let mut reef_prot = Genome::default_for_role(CellRole::Protector, &mut self.rng);
                 reef_prot.adhesion = 0.78;
-                self.spawn_cluster(420.0, 320.0, CellRole::Protector, 14, 80.0, Some(reef_prot.clone()));
+                self.spawn_cluster(
+                    420.0,
+                    320.0,
+                    CellRole::Protector,
+                    14,
+                    80.0,
+                    Some(reef_prot.clone()),
+                );
                 self.spawn_cluster(760.0, 460.0, CellRole::Protector, 14, 80.0, Some(reef_prot));
 
                 let mut reef_rep = Genome::default_for_role(CellRole::Replicator, &mut self.rng);
@@ -358,7 +385,14 @@ impl World {
             neural_bias: neural_bias.clamp(-1.0, 1.0),
             hue_shift: self.rng.range_f32(-0.06, 0.06),
         };
-        let last_id = self.spawn_cluster(x, y, role, count.clamp(1, 30), spread.max(8.0), Some(genome));
+        let last_id = self.spawn_cluster(
+            x,
+            y,
+            role,
+            count.clamp(1, 30),
+            spread.max(8.0),
+            Some(genome),
+        );
         if last_id != 0 {
             self.selected_cell_id = last_id;
         }
@@ -634,8 +668,12 @@ impl World {
                     }
                     let o_role = o.effective_role();
                     let is_threat = match base_role {
-                        CellRole::Protector => o_role == CellRole::Infected || o_role == CellRole::Predator,
-                        CellRole::Predator => o.lineage_id != c_lineage && o.base_role != CellRole::Predator,
+                        CellRole::Protector => {
+                            o_role == CellRole::Infected || o_role == CellRole::Predator
+                        }
+                        CellRole::Predator => {
+                            o.lineage_id != c_lineage && o.base_role != CellRole::Predator
+                        }
                         _ => o_role == CellRole::Predator || o_role == CellRole::Infected,
                     };
                     if is_threat && d2 < nearest_enemy_d2 {
@@ -746,7 +784,8 @@ impl World {
         } else {
             1.0
         };
-        let thrust = ((outputs[0] + 0.65) * 0.6).clamp(0.0, 1.35) * base_speed * q10.sqrt() * speed_scale;
+        let thrust =
+            ((outputs[0] + 0.65) * 0.6).clamp(0.0, 1.35) * base_speed * q10.sqrt() * speed_scale;
         let turn = outputs[1] * 0.24 + chemotaxis_angle_bias + self.rng.normal_approx() * 0.03;
 
         let next_angle = wrap_angle(current_angle + turn * dt);
@@ -756,7 +795,9 @@ impl World {
         // Energy (ATP) harvest, basal burn, and thermal shock damage.
         let taken_nutrient = match base_role {
             CellRole::Producer => self.fields.consume_nutrient(cx, cy, 0.022 * dt),
-            CellRole::Swimmer | CellRole::Replicator => self.fields.consume_nutrient(cx, cy, 0.016 * dt),
+            CellRole::Swimmer | CellRole::Replicator => {
+                self.fields.consume_nutrient(cx, cy, 0.016 * dt)
+            }
             CellRole::Protector => self.fields.consume_nutrient(cx, cy, 0.014 * dt),
             CellRole::Predator => self.fields.consume_nutrient(cx, cy, 0.008 * dt),
             CellRole::Infected => 0.0,
@@ -836,7 +877,8 @@ impl World {
                 // Host ATP is hijacked to replicate viral particles.
                 c.atp = (c.atp - 0.16 * dt).max(0.0);
                 // Antibodies + host CRISPR resistance suppress viral replication!
-                let suppression = local_toxin * 0.55 + immune_res * (1.0 - strain.immune_evasion) * 0.45;
+                let suppression =
+                    local_toxin * 0.55 + immune_res * (1.0 - strain.immune_evasion) * 0.45;
                 if suppression > 0.55 {
                     c.viral_load = (c.viral_load - 0.018 * dt).max(0.0);
                     if c.viral_load <= 0.01 {
@@ -924,7 +966,8 @@ impl World {
             };
             child_genome.role = child_role;
 
-            let off_ang = parent.angle + std::f32::consts::PI * 0.5 + self.rng.normal_approx() * 0.4;
+            let off_ang =
+                parent.angle + std::f32::consts::PI * 0.5 + self.rng.normal_approx() * 0.4;
             let dist = parent.radius * 1.65;
             let child_id = self.alloc_cell_id();
             let max_hp = 85.0 + child_genome.membrane_armor * 75.0;
@@ -1012,10 +1055,14 @@ impl World {
                             let nx_dir = dx / d;
                             let ny_dir = dy / d;
                             let push = overlap * 0.25;
-                            self.cells[i].x = (self.cells[i].x - nx_dir * push).clamp(ar, WORLD_W - ar);
-                            self.cells[i].y = (self.cells[i].y - ny_dir * push).clamp(ar, WORLD_H - ar);
-                            self.cells[j].x = (self.cells[j].x + nx_dir * push).clamp(br, WORLD_W - br);
-                            self.cells[j].y = (self.cells[j].y + ny_dir * push).clamp(br, WORLD_H - br);
+                            self.cells[i].x =
+                                (self.cells[i].x - nx_dir * push).clamp(ar, WORLD_W - ar);
+                            self.cells[i].y =
+                                (self.cells[i].y - ny_dir * push).clamp(ar, WORLD_H - ar);
+                            self.cells[j].x =
+                                (self.cells[j].x + nx_dir * push).clamp(br, WORLD_W - br);
+                            self.cells[j].y =
+                                (self.cells[j].y + ny_dir * push).clamp(br, WORLD_H - br);
                         }
 
                         // Protector / Immunocyte actions within immune range (28 px)
@@ -1023,25 +1070,35 @@ impl World {
                             if a_role == CellRole::Protector && a_eff != CellRole::Infected {
                                 if b_eff == CellRole::Infected {
                                     self.cells[j].hp -= 3.2 * dt;
-                                    self.cells[j].viral_load = (self.cells[j].viral_load - 0.04 * dt).max(0.0);
+                                    self.cells[j].viral_load =
+                                        (self.cells[j].viral_load - 0.04 * dt).max(0.0);
                                     if self.cells[j].hp <= 0.0 {
                                         self.cells[j].alive = false;
-                                        self.total_neutralized = self.total_neutralized.saturating_add(1);
+                                        self.total_neutralized =
+                                            self.total_neutralized.saturating_add(1);
                                     }
-                                } else if b_role != CellRole::Predator && self.cells[j].hp < self.cells[j].max_hp {
-                                    self.cells[j].hp = (self.cells[j].hp + 0.35 * dt).min(self.cells[j].max_hp);
+                                } else if b_role != CellRole::Predator
+                                    && self.cells[j].hp < self.cells[j].max_hp
+                                {
+                                    self.cells[j].hp =
+                                        (self.cells[j].hp + 0.35 * dt).min(self.cells[j].max_hp);
                                 }
                             }
                             if b_role == CellRole::Protector && b_eff != CellRole::Infected {
                                 if a_eff == CellRole::Infected {
                                     self.cells[i].hp -= 3.2 * dt;
-                                    self.cells[i].viral_load = (self.cells[i].viral_load - 0.04 * dt).max(0.0);
+                                    self.cells[i].viral_load =
+                                        (self.cells[i].viral_load - 0.04 * dt).max(0.0);
                                     if self.cells[i].hp <= 0.0 {
                                         self.cells[i].alive = false;
-                                        self.total_neutralized = self.total_neutralized.saturating_add(1);
+                                        self.total_neutralized =
+                                            self.total_neutralized.saturating_add(1);
                                     }
-                                } else if a_role != CellRole::Predator && self.cells[i].hp < self.cells[i].max_hp {
-                                    self.cells[i].hp = (self.cells[i].hp + 0.35 * dt).min(self.cells[i].max_hp);
+                                } else if a_role != CellRole::Predator
+                                    && self.cells[i].hp < self.cells[i].max_hp
+                                {
+                                    self.cells[i].hp =
+                                        (self.cells[i].hp + 0.35 * dt).min(self.cells[i].max_hp);
                                 }
                             }
                         }
@@ -1055,10 +1112,12 @@ impl World {
                             {
                                 let dmg = 5.5 * (1.0 - b_armor * 0.65) * dt;
                                 self.cells[j].hp -= dmg;
-                                self.cells[i].atp = (self.cells[i].atp + dmg * 0.95).min(self.cells[i].max_atp);
+                                self.cells[i].atp =
+                                    (self.cells[i].atp + dmg * 0.95).min(self.cells[i].max_atp);
                                 if self.cells[j].hp <= 0.0 {
                                     self.cells[j].alive = false;
-                                    self.cells[i].atp = (self.cells[i].atp + 28.0).min(self.cells[i].max_atp);
+                                    self.cells[i].atp =
+                                        (self.cells[i].atp + 28.0).min(self.cells[i].max_atp);
                                 }
                             } else if b_role == CellRole::Predator
                                 && b_eff != CellRole::Infected
@@ -1068,10 +1127,12 @@ impl World {
                                 let a_armor = self.cells[i].genome.membrane_armor;
                                 let dmg = 5.5 * (1.0 - a_armor * 0.65) * dt;
                                 self.cells[i].hp -= dmg;
-                                self.cells[j].atp = (self.cells[j].atp + dmg * 0.95).min(self.cells[j].max_atp);
+                                self.cells[j].atp =
+                                    (self.cells[j].atp + dmg * 0.95).min(self.cells[j].max_atp);
                                 if self.cells[i].hp <= 0.0 {
                                     self.cells[i].alive = false;
-                                    self.cells[j].atp = (self.cells[j].atp + 28.0).min(self.cells[j].max_atp);
+                                    self.cells[j].atp =
+                                        (self.cells[j].atp + 28.0).min(self.cells[j].max_atp);
                                 }
                             }
                         }
@@ -1133,8 +1194,10 @@ impl World {
 
                         if c.infected_by.is_none() && d2 < (c.radius + 5.0) * (c.radius + 5.0) {
                             // Infection probability gated by host CRISPR/immune resistance vs viral evasion!
-                            let effective_res = c.genome.immune_resistance * (1.0 - strain.immune_evasion);
-                            let p_infect = (strain.infectivity * (1.0 - effective_res)).clamp(0.03, 0.98);
+                            let effective_res =
+                                c.genome.immune_resistance * (1.0 - strain.immune_evasion);
+                            let p_infect =
+                                (strain.infectivity * (1.0 - effective_res)).clamp(0.03, 0.98);
                             if self.rng.chance(p_infect) {
                                 c.infected_by = Some(strain.clone());
                                 c.viral_load = 0.18;
@@ -1186,7 +1249,10 @@ impl World {
         // Update existing bonds: Hooke spring physics + ATP nutrient sharing.
         let mut kept_bonds = Vec::with_capacity(self.bonds.len());
         for bond in &self.bonds {
-            let (Some(ia), Some(ib)) = (find_idx(&self.id_to_idx, bond.a_id), find_idx(&self.id_to_idx, bond.b_id)) else {
+            let (Some(ia), Some(ib)) = (
+                find_idx(&self.id_to_idx, bond.a_id),
+                find_idx(&self.id_to_idx, bond.b_id),
+            ) else {
                 continue;
             };
             if ia == ib {
@@ -1250,7 +1316,10 @@ impl World {
                             continue;
                         }
                         let cb = &self.cells[j];
-                        if !cb.alive || cb.genome.adhesion <= 0.45 || cb.base_role == CellRole::Predator {
+                        if !cb.alive
+                            || cb.genome.adhesion <= 0.45
+                            || cb.base_role == CellRole::Predator
+                        {
                             continue;
                         }
                         let dx = cb.x - ca.x;
