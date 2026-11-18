@@ -265,7 +265,7 @@ body {
   flex: 1;
   display: grid;
   grid-template-columns: 268px minmax(0, 1fr) 364px;
-  min-height: calc(100vh - 45px);
+  min-height: 0;
 }
 
 /* Complex Layout Performance (modern-web-guidance: interactions-in-complex-layouts) */
@@ -284,7 +284,7 @@ body {
   background: var(--p-bg);
   padding: 8px;
   overflow-y: auto;
-  max-height: calc(100vh - 45px);
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -297,6 +297,7 @@ body {
 .dock-right {
   border-left: 1px solid var(--p-line);
   padding: 0;
+  overflow: hidden;
 }
 
 /* Panels */
@@ -506,11 +507,13 @@ input[type="range"]:focus-visible {
   flex-direction: column;
   background: var(--p-bg-deep);
   min-width: 0;
+  min-height: 0;
   position: relative;
 }
 
 .canvas-wrap {
   flex: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -520,9 +523,10 @@ input[type="range"]:focus-visible {
 }
 
 #sim-canvas {
-  width: 100%;
+  width: auto;
   height: auto;
-  max-height: calc(100vh - 96px);
+  max-width: 100%;
+  max-height: 100%;
   aspect-ratio: 3 / 2;
   background: #121413;
   border: 1px solid var(--p-line-strong);
@@ -594,10 +598,13 @@ input[type="range"]:focus-visible {
 .tabs {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   height: 100%;
 }
 
 .tablist {
+  flex: none;
   display: flex;
   flex-wrap: nowrap;
   overflow-x: auto;
@@ -684,6 +691,9 @@ input[type="range"]:focus-visible {
 
 /* All tabpanels share a single grid cell so hidden="until-found" panels take zero gap space */
 .tabpanels-stack {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
 }
@@ -995,6 +1005,8 @@ dialog::backdrop {
   backdrop-filter: blur(2px);
 }
 
+dialog.modal-wide,
+dialog:has(.modal-wide),
 .modal-wide {
   max-width: 720px;
 }
@@ -1077,6 +1089,29 @@ dialog::backdrop {
   color: var(--p-ink);
 }
 
+@media (min-width: 1221px) {
+  body {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .lab-shell {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .dock {
+    min-height: 0;
+    max-height: none;
+    height: 100%;
+  }
+
+  .stage {
+    min-height: 0;
+    height: 100%;
+  }
+}
+
 @media (max-width: 1220px) {
   .lab-shell {
     grid-template-columns: 1fr;
@@ -1089,7 +1124,32 @@ dialog::backdrop {
     border-bottom: 1px solid var(--p-line);
   }
 
+  .dock-right {
+    overflow: visible;
+  }
+
+  .tabpanels-stack {
+    overflow-y: visible;
+  }
+
+  #sim-canvas {
+    width: 100%;
+  }
+
   .guide-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .btn,
+  .select-sm,
+  .input-sm,
+  [role="tab"] {
+    min-height: 40px;
+  }
+
+  input[type="range"] {
+    block-size: 2.25rem;
   }
 }

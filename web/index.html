@@ -224,9 +224,9 @@
       <div class="tabs" id="studio-tabs">
         <div class="tablist scroller" role="tablist" focusgroup="tablist nomemory" aria-label="Studio workbench panels">
           <button type="button" role="tab" id="tab-creatures" data-tab="creatures" aria-selected="true" focusgroupstart>Creatures</button>
-          <button type="button" role="tab" id="tab-mutations" data-tab="mutations" aria-selected="false" tabindex="-1">Mutations</button>
-          <button type="button" role="tab" id="tab-viruses" data-tab="viruses" aria-selected="false" tabindex="-1">Viruses</button>
-          <button type="button" role="tab" id="tab-brain" data-tab="brain" aria-selected="false" tabindex="-1">Brain X-Ray</button>
+          <button type="button" role="tab" id="tab-mutations" data-tab="mutations" aria-selected="false">Mutations</button>
+          <button type="button" role="tab" id="tab-viruses" data-tab="viruses" aria-selected="false">Viruses</button>
+          <button type="button" role="tab" id="tab-brain" data-tab="brain" aria-selected="false">Brain X-Ray</button>
         </div>
 
         <div class="tabpanels-stack">
@@ -785,7 +785,7 @@
         </form>
       </div>
       <p class="modal-desc">
-        Inspect, copy, or paste a complete 8-mode multicellular organism genome (`M0..M7` roles, split angles, adhesion stiffness, and metabolic traits).
+        Inspect, copy, or paste a complete 8-mode multicellular organism genome (<code>M0..M7</code> roles, split angles, adhesion stiffness, and metabolic traits).
       </p>
       <label class="sr-only" for="genome-json-input">Organism genome JSON</label>
       <textarea id="genome-json-input" class="code-textarea" rows="12" spellcheck="false"></textarea>
@@ -798,7 +798,7 @@
   </dialog>
 
   <!-- MODAL 2: Biological Field Guide -->
-  <dialog id="guide-modal" closedby="any" aria-labelledby="guide-modal-title">
+  <dialog id="guide-modal" class="modal-wide" closedby="any" aria-labelledby="guide-modal-title">
     <div class="modal-shell modal-wide">
       <div class="modal-head">
         <h2 id="guide-modal-title">Biological laboratory field guide</h2>
@@ -827,7 +827,7 @@
         <div class="guide-block">
           <h3>Embryonic Modes, Brains &amp; Virology</h3>
           <ul class="guide-list">
-            <li><strong>Multi-Mode Development (M0–M7):</strong> When a cell reaches its split mass, it divides along its configured split angle into Daughter A (`child_a_mode`) and Daughter B (`child_b_mode`), forming spring adhesion bonds.</li>
+            <li><strong>Multi-Mode Development (M0–M7):</strong> When a cell reaches its split mass, it divides along its configured split angle into Daughter A (<code>child_a_mode</code>) and Daughter B (<code>child_b_mode</code>), forming spring adhesion bonds.</li>
             <li><strong>Recurrent Hebbian Brain (12→10→8):</strong> Each cell runs a 12-sensor, 10-hidden, 8-effector neural network with 4 recurrent working-memory cells and online reward-modulated Hebbian weight adaptation.</li>
             <li><strong>Viral Strategies:</strong> <em>Lytic</em> phages replicate rapidly and burst the host; <em>Lysogenic</em> proviruses integrate into daughter cells during mitosis before activating; <em>Oncogenic Mutators</em> rewire host neural weights and accelerate genome drift.</li>
           </ul>
