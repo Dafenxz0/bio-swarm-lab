@@ -51,6 +51,7 @@ jobs:
           node --check web/app.js
           node --check web/renderer.js
           node --check web/inspector.js
+          node --check web/studio.js
           node --test web/tests/ui_contract.test.mjs
 
       - name: Build release WASM
@@ -59,20 +60,22 @@ jobs:
       - name: Stage Pages site and smoke-test WASM in Node
         run: |
           mkdir -p _site
-          cp web/index.html web/styles.css web/app.js web/renderer.js web/inspector.js _site/
+          cp web/*.html web/*.css web/*.js _site/
           cp target/wasm32-unknown-unknown/release/bio_swarm_lab.wasm _site/bio_swarm_lab.wasm
           node -e '
             const fs = require("fs");
             const bytes = fs.readFileSync("_site/bio_swarm_lab.wasm");
             WebAssembly.instantiate(bytes, {}).then(({ instance }) => {
               const ex = instance.exports;
-              const ptr = ex.sim_create(42, 0);
-              for (let i = 0; i < 10; i++) ex.sim_step(ptr, 1.0);
-              const pop = ex.sim_cell_count(ptr);
-              const tick = ex.sim_tick(ptr);
-              ex.sim_destroy(ptr);
-              if (pop <= 0 || tick !== 10) process.exit(1);
-              console.log("WASM smoke OK: tick=" + tick + " cells=" + pop);
+              for (let sc = 0; sc < 6; sc++) {
+                const ptr = ex.sim_create(42 + sc, sc);
+                for (let i = 0; i < 12; i++) ex.sim_step(ptr, 1.0);
+                const pop = ex.sim_cell_count(ptr);
+                const tick = ex.sim_tick(ptr);
+                ex.sim_destroy(ptr);
+                if (tick !== 12 || (sc < 5 && pop <= 0)) process.exit(1);
+              }
+              console.log("WASM smoke OK across all 6 scenarios");
             });
           '
 

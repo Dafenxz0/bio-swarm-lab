@@ -42,6 +42,16 @@ impl Rng {
         lo + (hi - lo) * self.next_f32()
     }
 
+    /// Uniform integer in `[0, upper)`.
+    #[inline]
+    pub fn range_u32(&mut self, upper: u32) -> u32 {
+        if upper <= 1 {
+            0
+        } else {
+            self.next_u32() % upper
+        }
+    }
+
     /// Approximate zero-mean normal sample via Irwin-Hall (sum of 3 uniforms).
     #[inline]
     pub fn normal_approx(&mut self) -> f32 {

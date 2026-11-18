@@ -1,9 +1,16 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-type="software" data-radius="sharp">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>bio-swarm-lab — Neural Swarm &amp; Pathogen Ecology Simulator</title>
+  <meta name="page-type" content="software" />
+  <meta name="site-kind" content="software" />
+  <meta name="theme-color" content="#1c1c1c" />
+  <meta name="description" content="Multicellular biological laboratory with 12 differentiated cell types, M0-M7 developmental genomes, recurrent Hebbian neural networks, custom mutagenesis, and viral pathology in Rust and WebAssembly." />
+  <title>bio-swarm-lab — Multicellular Differentiation &amp; Virology Workbench</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&amp;family=Geist+Mono:wght@400..500&amp;display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -11,258 +18,823 @@
 
   <header class="topbar">
     <div class="brand">
-      <h1>bio-swarm-lab</h1>
-      <span class="badge">RUST / WASM</span>
+      <svg class="brand-mark" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+        <circle cx="10" cy="10" r="8.5" fill="none" stroke="currentColor" stroke-width="1.4" />
+        <circle cx="7.2" cy="8.5" r="2.6" fill="currentColor" />
+        <circle cx="13.1" cy="11.4" r="2.1" fill="none" stroke="currentColor" stroke-width="1.3" />
+        <line x1="9.4" y1="9.6" x2="11.2" y2="10.5" stroke="currentColor" stroke-width="1.3" />
+      </svg>
+      <div class="brand-text">
+        <h1>bio-swarm-lab</h1>
+        <span class="badge">Rust / WASM</span>
+      </div>
     </div>
 
-    <div class="scenarios" role="group" aria-label="Scenarios">
-      <button class="btn active" data-scenario="0">Primordial Evolution</button>
-      <button class="btn" data-scenario="1">Immune Swarm vs Pandemic</button>
-      <button class="btn" data-scenario="2">Thermal Vent Extremophiles</button>
-      <button class="btn" data-scenario="3">Multicellular Reef</button>
+    <div class="telemetry-strip" role="region" aria-label="Live simulation telemetry">
+      <div class="telemetry-pill">
+        <span class="telemetry-label">Tick</span>
+        <span id="kpi-tick" class="telemetry-val">0</span>
+      </div>
+      <div class="telemetry-pill">
+        <span class="telemetry-label">Gen</span>
+        <span id="kpi-gen" class="telemetry-val">1</span>
+      </div>
+      <div class="telemetry-pill">
+        <span class="telemetry-label">Cells</span>
+        <span id="kpi-pop" class="telemetry-val">0</span>
+      </div>
+      <div class="telemetry-pill">
+        <span class="telemetry-label">Virions</span>
+        <span id="kpi-virions" class="telemetry-val">0</span>
+      </div>
+      <div class="telemetry-pill">
+        <span class="telemetry-label">Mutations</span>
+        <span id="kpi-mutations" class="telemetry-val">0</span>
+      </div>
+      <div class="telemetry-pill">
+        <span class="telemetry-label">Bonds</span>
+        <span id="kpi-bonds" class="telemetry-val">0</span>
+      </div>
+      <div class="telemetry-pill">
+        <span class="telemetry-label">T_opt</span>
+        <span id="kpi-topt" class="telemetry-val">25.0°C</span>
+      </div>
+      <div class="telemetry-pill">
+        <span class="telemetry-label">CRISPR</span>
+        <span id="kpi-immune" class="telemetry-val">0%</span>
+      </div>
+      <div class="telemetry-pill">
+        <span class="telemetry-label">FPS</span>
+        <span id="kpi-fps" class="telemetry-val">60</span>
+      </div>
     </div>
 
-    <div class="transport">
-      <button id="btn-play" class="btn active">Pause</button>
-      <button id="btn-step" class="btn">Step</button>
-      <select id="sim-speed" class="select-sm" aria-label="Simulation speed">
-        <option value="0.5">0.5x</option>
-        <option value="1" selected>1x</option>
-        <option value="2">2x</option>
-        <option value="4">4x</option>
-      </select>
-      <button id="btn-reset" class="btn">Reset</button>
+    <div class="topbar-controls">
+      <div class="control-group" role="group" aria-label="Playback transport">
+        <button type="button" id="btn-play" class="btn active">Pause</button>
+        <button type="button" id="btn-step" class="btn">Step</button>
+        <label class="sr-only" for="sim-speed">Simulation speed</label>
+        <select id="sim-speed" class="select-sm" aria-label="Simulation speed">
+          <option value="0.5">0.5x</option>
+          <option value="1" selected>1x</option>
+          <option value="2">2x</option>
+          <option value="4">4x</option>
+        </select>
+      </div>
+
+      <div class="control-group" role="group" aria-label="Scenario preset">
+        <label class="sr-only" for="scenario-select">Active ecological scenario</label>
+        <select id="scenario-select" class="select-sm" aria-label="Ecological scenario">
+          <option value="0" selected>0 · Conscious Reef &amp; Leviathans</option>
+          <option value="1">1 · Pandemic vs CRISPR Immunity</option>
+          <option value="2">2 · Hydrothermal Vents &amp; Cryo</option>
+          <option value="3">3 · Mutagenic Petri Maze</option>
+          <option value="4">4 · Multicellular Combat Arena</option>
+          <option value="5">5 · Blank Sterile Petri Dish</option>
+        </select>
+        <button type="button" id="btn-reset" class="btn">Reset dish</button>
+      </div>
+
+      <div class="control-group" role="group" aria-label="Studio dialogs">
+        <button type="button" id="btn-open-genome-modal" class="btn">Blueprint JSON</button>
+        <button type="button" id="btn-open-guide-modal" class="btn">Field guide</button>
+      </div>
     </div>
   </header>
 
-  <section class="kpi-strip" aria-label="Live telemetry">
-    <div class="kpi"><span class="kpi-label">TICK</span><span id="kpi-tick" class="kpi-val">0</span></div>
-    <div class="kpi"><span class="kpi-label">CELLS</span><span id="kpi-pop" class="kpi-val">0</span></div>
-    <div class="kpi"><span class="kpi-label">VIRIONS</span><span id="kpi-virions" class="kpi-val">0</span></div>
-    <div class="kpi"><span class="kpi-label">BONDS</span><span id="kpi-bonds" class="kpi-val">0</span></div>
-    <div class="kpi"><span class="kpi-label">MAX GEN</span><span id="kpi-gen" class="kpi-val">1</span></div>
-    <div class="kpi"><span class="kpi-label">AVG T_OPT</span><span id="kpi-topt" class="kpi-val">25.0°C</span></div>
-    <div class="kpi"><span class="kpi-label">CRISPR IMM</span><span id="kpi-immune" class="kpi-val">0%</span></div>
-    <div class="kpi"><span class="kpi-label">NEUTRALIZED</span><span id="kpi-neut" class="kpi-val">0</span></div>
-    <div class="kpi"><span class="kpi-label">LYTIC BURSTS</span><span id="kpi-bursts" class="kpi-val">0</span></div>
-  </section>
-
-  <main class="lab-grid">
-    <aside class="dock dock-left">
+  <main class="lab-shell">
+    <!-- Left Dock: Microscope Brush Palette, Field Overlays, and Optical Camera -->
+    <aside class="dock dock-left studio-column" aria-label="Microscope tools and field overlays">
       <section class="panel">
-        <h2 class="panel-title">Lab Brushes</h2>
-        <div class="tool-grid">
-          <button class="btn tool-btn active" data-brush="inspect">Inspect Cell</button>
-          <button class="btn tool-btn" data-brush="spawn">Spawn Cell</button>
-          <button class="btn tool-btn" data-brush="virus">Inject Virus</button>
-          <button class="btn tool-btn" data-brush="heat">Heat Brush</button>
-          <button class="btn tool-btn" data-brush="cryo">Cryo Brush</button>
-          <button class="btn tool-btn" data-brush="nutrient">Nutrient Drop</button>
-          <button class="btn tool-btn" data-brush="toxin">Antibiotic/Ab</button>
+        <div class="panel-head">
+          <h2 class="panel-title">Microscope brushes</h2>
+          <span class="panel-meta">11 instruments</span>
         </div>
-        <div style="margin-top:8px">
+        <div class="tool-grid" role="group" aria-label="Interactive petri brushes">
+          <button type="button" class="btn tool-btn active" data-brush="inspect">Inspect cell</button>
+          <button type="button" class="btn tool-btn" data-brush="spawn">Spawn creature</button>
+          <button type="button" class="btn tool-btn" data-brush="virus">Inject virus</button>
+          <button type="button" class="btn tool-btn" data-brush="mutagen">Mutagen ray</button>
+          <button type="button" class="btn tool-btn" data-brush="heat">Heat thermal</button>
+          <button type="button" class="btn tool-btn" data-brush="cryo">Cryo probe</button>
+          <button type="button" class="btn tool-btn" data-brush="light">Solar beam</button>
+          <button type="button" class="btn tool-btn" data-brush="nutrient">Nutrient drop</button>
+          <button type="button" class="btn tool-btn" data-brush="toxin">Antibiotic</button>
+          <button type="button" class="btn tool-btn" data-brush="wall">Draw wall</button>
+          <button type="button" class="btn tool-btn span-2" data-brush="erase">Erase wall barrier</button>
+        </div>
+
+        <div class="slider-stack">
           <div class="slider-row">
-            <label for="brush-radius">Brush Radius</label>
-            <input id="brush-radius" type="range" min="18" max="150" step="2" value="55" data-out="val-brush-radius" data-unit="px" />
-            <span id="val-brush-radius">55px</span>
+            <label for="brush-radius">Brush radius</label>
+            <input id="brush-radius" type="range" min="14" max="160" step="2" value="56" data-out="val-brush-radius" data-unit="px" />
+            <span id="val-brush-radius" class="slider-val">56px</span>
           </div>
           <div class="slider-row">
-            <label for="brush-intensity">Intensity</label>
-            <input id="brush-intensity" type="range" min="0.1" max="1.5" step="0.05" value="0.7" data-out="val-brush-intensity" />
-            <span id="val-brush-intensity">0.7</span>
+            <label for="brush-intensity">Brush flux</label>
+            <input id="brush-intensity" type="range" min="0.1" max="1.5" step="0.05" value="0.75" data-out="val-brush-intensity" />
+            <span id="val-brush-intensity" class="slider-val">0.75</span>
           </div>
         </div>
       </section>
 
       <section class="panel">
-        <h2 class="panel-title">Field Overlays</h2>
-        <div class="tool-grid">
-          <button class="btn tool-btn active" data-overlay="biology">Normal Biology</button>
-          <button class="btn tool-btn" data-overlay="temperature">Temperature</button>
-          <button class="btn tool-btn" data-overlay="nutrients">Nutrient Field</button>
-          <button class="btn tool-btn" data-overlay="pheromones">Pheromones</button>
-          <button class="btn tool-btn" data-overlay="stress">Immune/Viral</button>
+        <div class="panel-head">
+          <h2 class="panel-title">Optical field overlay</h2>
+          <span class="panel-meta">2D grid</span>
+        </div>
+        <div class="tool-grid" role="group" aria-label="Diffusion field overlays">
+          <button type="button" class="btn tool-btn active" data-overlay="biology">Biology</button>
+          <button type="button" class="btn tool-btn" data-overlay="temperature">Temperature</button>
+          <button type="button" class="btn tool-btn" data-overlay="light">Light field</button>
+          <button type="button" class="btn tool-btn" data-overlay="nutrients">Nutrients</button>
+          <button type="button" class="btn tool-btn" data-overlay="pheromones">Pheromones</button>
+          <button type="button" class="btn tool-btn" data-overlay="toxin">Toxin / Ab</button>
+          <button type="button" class="btn tool-btn span-2" data-overlay="mutagen">Mutagen radiation</button>
         </div>
         <div class="overlay-legend">
-          <span id="overlay-low">Cold / Nutrient-poor</span>
-          <span id="overlay-high">Warm / Nutrient-rich</span>
+          <span id="overlay-low">Cold / low nutrient</span>
+          <span id="overlay-high">Warm / high nutrient</span>
         </div>
         <div id="overlay-bar" class="overlay-bar"></div>
       </section>
 
       <section class="panel">
-        <h2 class="panel-title">Custom Cell &amp; Genome Designer</h2>
-        <div class="slider-row">
-          <label for="cell-role">Cell Role</label>
-          <select id="cell-role" class="select-sm" style="grid-column: span 2;">
-            <option value="0">Producer (Photocyte)</option>
-            <option value="1">Protector (Immunocyte)</option>
-            <option value="2">Predator (Phagocyte)</option>
-            <option value="3">Swimmer (Myocyte)</option>
-            <option value="4">Replicator (Stem)</option>
-          </select>
+        <div class="panel-head">
+          <h2 class="panel-title">Stage optics &amp; chamber</h2>
+          <span id="val-camera-zoom" class="panel-meta">1.0x</span>
         </div>
-        <div class="slider-row">
-          <label for="cell-count">Colony Size</label>
-          <input id="cell-count" type="range" min="1" max="24" step="1" value="6" data-out="val-cell-count" />
-          <span id="val-cell-count">6</span>
+        <div class="slider-stack">
+          <div class="slider-row">
+            <label for="camera-zoom">Optical zoom</label>
+            <input id="camera-zoom" type="range" min="0.5" max="3.5" step="0.1" value="1.0" data-out="val-camera-zoom" data-unit="x" />
+            <span class="slider-val" id="val-camera-zoom-readout">1.0x</span>
+          </div>
         </div>
-        <div class="slider-row">
-          <label for="cell-armor">Membrane Armor</label>
-          <input id="cell-armor" type="range" min="0.05" max="0.9" step="0.05" value="0.3" data-out="val-cell-armor" />
-          <span id="val-cell-armor">0.3</span>
+        <div class="btn-row">
+          <button type="button" id="btn-zoom-in" class="btn">Zoom in</button>
+          <button type="button" id="btn-zoom-out" class="btn">Zoom out</button>
+          <button type="button" id="btn-camera-reset" class="btn">Reset view</button>
         </div>
-        <div class="slider-row">
-          <label for="cell-metabolism">Metabolism</label>
-          <input id="cell-metabolism" type="range" min="0.5" max="2.0" step="0.05" value="1.0" data-out="val-cell-metabolism" data-unit="x" />
-          <span id="val-cell-metabolism">1.0x</span>
+        <div class="btn-row" style="margin-top: 6px;">
+          <button type="button" id="btn-clear-walls" class="btn full-width">Clear chamber walls</button>
         </div>
-        <div class="slider-row">
-          <label for="cell-topt">Optimal Temp</label>
-          <input id="cell-topt" type="range" min="-20" max="90" step="1" value="25" data-out="val-cell-topt" data-unit="°C" />
-          <span id="val-cell-topt">25°C</span>
-        </div>
-        <div class="slider-row">
-          <label for="cell-ttol">Temp Tolerance</label>
-          <input id="cell-ttol" type="range" min="6" max="36" step="1" value="18" data-out="val-cell-ttol" data-unit="°C" />
-          <span id="val-cell-ttol">18°C</span>
-        </div>
-        <div class="slider-row">
-          <label for="cell-adhesion">Adhesion</label>
-          <input id="cell-adhesion" type="range" min="0" max="1" step="0.05" value="0.35" data-out="val-cell-adhesion" />
-          <span id="val-cell-adhesion">0.35</span>
-        </div>
-        <div class="slider-row">
-          <label for="cell-immune">CRISPR Immunity</label>
-          <input id="cell-immune" type="range" min="0.05" max="0.95" step="0.05" value="0.4" data-out="val-cell-immune" />
-          <span id="val-cell-immune">0.4</span>
-        </div>
-        <div class="slider-row">
-          <label for="cell-mutation">Mutation Rate</label>
-          <input id="cell-mutation" type="range" min="0.01" max="0.38" step="0.01" value="0.09" data-out="val-cell-mutation" />
-          <span id="val-cell-mutation">0.09</span>
-        </div>
-        <div class="slider-row">
-          <label for="cell-bias">Neural Bias</label>
-          <input id="cell-bias" type="range" min="-1" max="1" step="0.05" value="0.1" data-out="val-cell-bias" />
-          <span id="val-cell-bias">0.1</span>
-        </div>
-        <button id="btn-spawn-center" class="btn btn-primary full-btn">Spawn Colony at Center</button>
       </section>
 
       <section class="panel">
-        <h2 class="panel-title">Custom Virus Designer</h2>
-        <div class="slider-row">
-          <label for="virus-infectivity">Infectivity</label>
-          <input id="virus-infectivity" type="range" min="0.1" max="1.0" step="0.05" value="0.7" data-out="val-v-inf" />
-          <span id="val-v-inf">0.7</span>
+        <div class="panel-head">
+          <h2 class="panel-title">Quick scenario switch</h2>
+          <span class="panel-meta">0–5</span>
         </div>
-        <div class="slider-row">
-          <label for="virus-incubation">Incubation Ticks</label>
-          <input id="virus-incubation" type="range" min="30" max="320" step="10" value="100" data-out="val-v-inc" />
-          <span id="val-v-inc">100</span>
+        <div class="tool-grid" role="group" aria-label="Quick scenario buttons">
+          <button type="button" class="btn tool-btn active" data-scenario="0">0 · Reef</button>
+          <button type="button" class="btn tool-btn" data-scenario="1">1 · Pandemic</button>
+          <button type="button" class="btn tool-btn" data-scenario="2">2 · Thermal</button>
+          <button type="button" class="btn tool-btn" data-scenario="3">3 · Maze</button>
+          <button type="button" class="btn tool-btn" data-scenario="4">4 · Combat</button>
+          <button type="button" class="btn tool-btn" data-scenario="5">5 · Sandbox</button>
         </div>
-        <div class="slider-row">
-          <label for="virus-burst">Burst Count</label>
-          <input id="virus-burst" type="range" min="2" max="12" step="1" value="6" data-out="val-v-burst" />
-          <span id="val-v-burst">6</span>
-        </div>
-        <div class="slider-row">
-          <label for="virus-lethality">Lethality</label>
-          <input id="virus-lethality" type="range" min="0.1" max="1.0" step="0.05" value="0.6" data-out="val-v-leth" />
-          <span id="val-v-leth">0.6</span>
-        </div>
-        <div class="slider-row">
-          <label for="virus-mutation">Viral Mut Rate</label>
-          <input id="virus-mutation" type="range" min="0" max="0.5" step="0.02" value="0.22" data-out="val-v-mut" />
-          <span id="val-v-mut">0.22</span>
-        </div>
-        <div class="slider-row">
-          <label for="virus-evasion">Immune Evasion</label>
-          <input id="virus-evasion" type="range" min="0" max="0.9" step="0.05" value="0.25" data-out="val-v-eva" />
-          <span id="val-v-eva">0.25</span>
-        </div>
-        <div class="slider-row">
-          <label for="virus-count">Virion Load</label>
-          <input id="virus-count" type="range" min="5" max="60" step="5" value="25" data-out="val-v-cnt" />
-          <span id="val-v-cnt">25</span>
-        </div>
-        <button id="btn-virus-center" class="btn btn-danger full-btn">Unleash Outbreak at Center</button>
       </section>
     </aside>
 
-    <section class="stage">
-      <div class="canvas-wrap">
-        <canvas id="sim-canvas" width="1200" height="800"></canvas>
-      </div>
-      <div class="stage-hud">
-        <span id="hud-cursor">(600, 400) | T:25.0°C | Gluc:0.55 | Alrm:0.00 | Food:0.00 | Ab:0.00</span>
-        <div class="legend-dots">
-          <span class="legend-item"><i class="dot" style="background:#38d9a9"></i>Producer</span>
-          <span class="legend-item"><i class="dot" style="background:#4dabf7"></i>Protector</span>
-          <span class="legend-item"><i class="dot" style="background:#ff6b6b"></i>Predator</span>
-          <span class="legend-item"><i class="dot" style="background:#ffd43b"></i>Swimmer</span>
-          <span class="legend-item"><i class="dot" style="background:#3bc9db"></i>Replicator</span>
-          <span class="legend-item"><i class="dot" style="background:#e599f7"></i>Infected</span>
+    <!-- Centerpiece: Full-Bleed Microscope Stage -->
+    <section class="stage" aria-label="Microscope petri stage">
+      <div class="canvas-wrap" id="canvas-viewport">
+        <canvas id="sim-canvas" width="1200" height="800" aria-label="Biological cell simulation canvas"></canvas>
+
+        <div id="hover-tooltip" class="hover-tooltip hidden" role="status" aria-live="polite"></div>
+
+        <div id="scale-bar" class="scale-bar" aria-hidden="true">
+          <div class="scale-bar-line"></div>
+          <span id="scale-bar-label">100 μm</span>
         </div>
       </div>
+
+      <footer class="stage-hud">
+        <span id="hud-cursor" class="hud-readout">(600, 400) | T:25.0°C | Light:0.80 | Nutr:0.55 | Mut:0.00 | Ab:0.00</span>
+        <div class="hud-counters">
+          <span>Neutralized: <strong id="kpi-neut">0</strong></span>
+          <span>Lytic bursts: <strong id="kpi-bursts">0</strong></span>
+        </div>
+      </footer>
     </section>
 
-    <aside class="dock dock-right">
-      <section class="panel">
-        <h2 class="panel-title">
-          <span>Cell X-Ray Inspector</span>
-          <span id="insp-id" style="color:var(--accent)">#1</span>
-        </h2>
-
-        <div class="inspector-meta">
-          <div>Role: <strong id="insp-role">Producer</strong></div>
-          <div style="text-align:right"><span id="insp-gen">Gen 1</span></div>
-          <div id="insp-lineage" style="grid-column: span 2; color:var(--text-2)">Lin 1 · Age 0</div>
-          <div id="insp-thermal" style="grid-column: span 2; color:var(--text-1)">25.0°C (Q10 1.00x · Optimal)</div>
+    <!-- Right Dock: Accessible Tabbed Studio Inspector & Designer -->
+    <aside class="dock dock-right studio-column" aria-label="Organism designer and cell inspector">
+      <div class="tabs" id="studio-tabs">
+        <div class="tablist scroller" role="tablist" focusgroup="tablist nomemory" aria-label="Studio workbench panels">
+          <button type="button" role="tab" id="tab-creatures" data-tab="creatures" aria-selected="true" focusgroupstart>Creatures</button>
+          <button type="button" role="tab" id="tab-mutations" data-tab="mutations" aria-selected="false" tabindex="-1">Mutations</button>
+          <button type="button" role="tab" id="tab-viruses" data-tab="viruses" aria-selected="false" tabindex="-1">Viruses</button>
+          <button type="button" role="tab" id="tab-brain" data-tab="brain" aria-selected="false" tabindex="-1">Brain X-Ray</button>
         </div>
 
-        <div class="bar-row">
-          <div class="bar-head"><span>HP Integrity</span><span id="insp-hp-val">100/100</span></div>
-          <div class="bar-track"><div id="insp-hp-bar" class="bar-fill" style="width:100%; background:#ff8787;"></div></div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-head"><span>ATP Energy</span><span id="insp-atp-val">75/115</span></div>
-          <div class="bar-track"><div id="insp-atp-bar" class="bar-fill" style="width:65%; background:#38d9a9;"></div></div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-head"><span>Viral Load</span><span id="insp-viral-val">0%</span></div>
-          <div class="bar-track"><div id="insp-viral-bar" class="bar-fill" style="width:0%; background:#e599f7;"></div></div>
-        </div>
+        <div class="tabpanels-stack">
+          <!-- TAB 1: CREATURES (Cell Lab Multi-Mode M0..M7 Designer) -->
+          <div role="tabpanel" id="panel-creatures" aria-labelledby="tab-creatures">
+            <div class="tabpanel-inner">
+              <section class="panel">
+                <div class="panel-head">
+                  <h2 class="panel-title">Conscious creature blueprint</h2>
+                  <span id="blueprint-summary" class="panel-meta">M0–M7 tree</span>
+                </div>
 
-        <h3 class="panel-title" style="margin-top:8px;">Live Neural Brain (10 → 8 → 6)</h3>
-        <canvas id="nn-canvas" width="300" height="225"></canvas>
+                <div class="field-row">
+                  <label for="creature-preset">Preset genome</label>
+                  <select id="creature-preset" class="select-sm">
+                    <option value="0" selected>Apex Leviathan (Predator Swimmer)</option>
+                    <option value="1">Solar Reef (Vascular Symbiont)</option>
+                    <option value="2">Swarm Valkyrie (Cooperative Hunter)</option>
+                    <option value="3">Macrophage Sentinel (CRISPR Guardian)</option>
+                    <option value="4">Muscle Worm (Myocyte Undulator)</option>
+                    <option value="custom">Custom Genome Blueprint</option>
+                  </select>
+                </div>
 
-        <h3 class="panel-title" style="margin-top:6px;">Genome DNA Traits</h3>
-        <div class="dna-grid">
-          <div>T_opt: <strong id="dna-topt">25°C ±18</strong></div>
-          <div>Metab: <strong id="dna-met">1.00x</strong></div>
-          <div>Armor: <strong id="dna-armor">25%</strong></div>
-          <div>Adhesion: <strong id="dna-adh">35%</strong></div>
-          <div>CRISPR: <strong id="dna-imm">28%</strong></div>
-          <div>MutRate: <strong id="dna-mut">8.0%</strong></div>
-          <div>NN Bias: <strong id="dna-bias">0.00</strong></div>
-        </div>
-      </section>
+                <canvas id="blueprint-canvas" class="studio-canvas" width="320" height="164" aria-label="Embryonic creature division preview"></canvas>
 
-      <section class="panel">
-        <h2 class="panel-title">Population &amp; Virion Dynamics</h2>
-        <canvas id="pop-sparkline" class="spark-canvas" width="300" height="92"></canvas>
-        <h2 class="panel-title" style="margin-top:6px;">Evolution (T_opt / CRISPR / Adhesion)</h2>
-        <canvas id="evo-sparkline" class="spark-canvas" width="300" height="92"></canvas>
-        <div class="overlay-legend">
-          <span style="color:#f59f00">T_opt (-20..90°C)</span>
-          <span style="color:#4dabf7">CRISPR</span>
-          <span style="color:#38d9a9">Adhesion</span>
+                <div class="mode-bar-head">
+                  <span class="sub-label">Developmental cell modes</span>
+                  <span id="active-mode-label" class="panel-meta">Editing M0</span>
+                </div>
+                <div id="mode-pills" class="mode-pills" role="group" aria-label="Cell development modes M0 to M7">
+                  <button type="button" class="btn mode-pill active" data-mode="0">M0</button>
+                  <button type="button" class="btn mode-pill" data-mode="1">M1</button>
+                  <button type="button" class="btn mode-pill" data-mode="2">M2</button>
+                  <button type="button" class="btn mode-pill" data-mode="3">M3</button>
+                  <button type="button" class="btn mode-pill" data-mode="4">M4</button>
+                  <button type="button" class="btn mode-pill" data-mode="5">M5</button>
+                  <button type="button" class="btn mode-pill" data-mode="6">M6</button>
+                  <button type="button" class="btn mode-pill" data-mode="7">M7</button>
+                </div>
+
+                <div class="field-row">
+                  <label for="mode-role">Cell role (12 types)</label>
+                  <select id="mode-role" class="select-sm">
+                    <option value="0">0 · Photocyte (Solar ATP)</option>
+                    <option value="1">1 · Phagocyte (Predator Jaws)</option>
+                    <option value="2">2 · Flagellocyte (Motile Tail)</option>
+                    <option value="3">3 · Myocyte (Contractile Muscle)</option>
+                    <option value="4">4 · Neurocyte (Synaptic Relay)</option>
+                    <option value="5">5 · Senseocyte (Optical/Chemo Cone)</option>
+                    <option value="6">6 · Immunocyte (CRISPR Antibody)</option>
+                    <option value="7">7 · Keratinocyte (Armored Shield)</option>
+                    <option value="8">8 · Secreocyte (Exocrine Gland)</option>
+                    <option value="9">9 · Vascularocyte (ATP Vessel)</option>
+                    <option value="10">10 · Stemocyte (Pluripotent Stem)</option>
+                    <option value="11">11 · Scavenger (Detritus Recycler)</option>
+                  </select>
+                </div>
+
+                <!-- Hidden/synced alias select for backward-compatible scripts if needed -->
+                <select id="cell-role" class="hidden" aria-hidden="true" tabindex="-1">
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                </select>
+
+                <div class="split-children-grid">
+                  <div class="field-col">
+                    <label for="mode-child-a">Child A mode</label>
+                    <select id="mode-child-a" class="select-sm">
+                      <option value="0">M0</option>
+                      <option value="1" selected>M1</option>
+                      <option value="2">M2</option>
+                      <option value="3">M3</option>
+                      <option value="4">M4</option>
+                      <option value="5">M5</option>
+                      <option value="6">M6</option>
+                      <option value="7">M7</option>
+                    </select>
+                  </div>
+                  <div class="field-col">
+                    <label for="mode-child-b">Child B mode</label>
+                    <select id="mode-child-b" class="select-sm">
+                      <option value="0">M0</option>
+                      <option value="1">M1</option>
+                      <option value="2" selected>M2</option>
+                      <option value="3">M3</option>
+                      <option value="4">M4</option>
+                      <option value="5">M5</option>
+                      <option value="6">M6</option>
+                      <option value="7">M7</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="check-row-pair">
+                  <label class="check-label">
+                    <input type="checkbox" id="mode-keep-adhesion" checked />
+                    <span>Keep parent adhesion</span>
+                  </label>
+                  <label class="check-label">
+                    <input type="checkbox" id="mode-bond-children" checked />
+                    <span>Bond daughter cells</span>
+                  </label>
+                </div>
+
+                <div class="slider-stack">
+                  <div class="slider-row">
+                    <label for="mode-split-angle">Split angle</label>
+                    <input id="mode-split-angle" type="range" min="-3.14" max="3.14" step="0.05" value="0.0" data-out="val-mode-split-angle" data-unit=" rad" />
+                    <span id="val-mode-split-angle" class="slider-val">0.0 rad</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mode-split-mass">Split mass</label>
+                    <input id="mode-split-mass" type="range" min="1.1" max="3.2" step="0.05" value="1.75" data-out="val-mode-split-mass" data-unit="x" />
+                    <span id="val-mode-split-mass" class="slider-val">1.75x</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mode-adhesion">Adhesion stiff</label>
+                    <input id="mode-adhesion" type="range" min="0.05" max="1.0" step="0.05" value="0.65" data-out="val-mode-adhesion" />
+                    <span id="val-mode-adhesion" class="slider-val">0.65</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mode-max-bonds">Max bonds</label>
+                    <input id="mode-max-bonds" type="range" min="0" max="6" step="1" value="4" data-out="val-mode-max-bonds" />
+                    <span id="val-mode-max-bonds" class="slider-val">4</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mode-topt">Optimal temp</label>
+                    <input id="mode-topt" type="range" min="-20" max="90" step="1" value="25" data-out="val-mode-topt" data-unit="°C" />
+                    <span id="val-mode-topt" class="slider-val">25°C</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mode-ttol">Temp tolerance</label>
+                    <input id="mode-ttol" type="range" min="6" max="40" step="1" value="18" data-out="val-mode-ttol" data-unit="°C" />
+                    <span id="val-mode-ttol" class="slider-val">18°C</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mode-metabolism">Metabolism</label>
+                    <input id="mode-metabolism" type="range" min="0.4" max="2.2" step="0.05" value="1.0" data-out="val-mode-metabolism" data-unit="x" />
+                    <span id="val-mode-metabolism" class="slider-val">1.0x</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mode-armor">Membrane armor</label>
+                    <input id="mode-armor" type="range" min="0.0" max="0.95" step="0.05" value="0.3" data-out="val-mode-armor" />
+                    <span id="val-mode-armor" class="slider-val">0.3</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mode-immune">Immune / CRISPR</label>
+                    <input id="mode-immune" type="range" min="0.0" max="1.0" step="0.05" value="0.45" data-out="val-mode-immune" />
+                    <span id="val-mode-immune" class="slider-val">0.45</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mode-vascular">Vascular share</label>
+                    <input id="mode-vascular" type="range" min="0.0" max="1.0" step="0.05" value="0.55" data-out="val-mode-vascular" />
+                    <span id="val-mode-vascular" class="slider-val">0.55</span>
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <label for="mode-secretion">Secretion payload</label>
+                  <select id="mode-secretion" class="select-sm">
+                    <option value="0" selected>0 · None</option>
+                    <option value="1">1 · Food attractant pheromone</option>
+                    <option value="2">2 · Alarm warning pheromone</option>
+                    <option value="3">3 · Neutralizing antibody</option>
+                    <option value="4">4 · Cytotoxic enzyme</option>
+                    <option value="5">5 · Nutrient mucus trail</option>
+                  </select>
+                </div>
+
+                <div class="slider-stack">
+                  <div class="slider-row">
+                    <label for="mode-sensory">Sensory range</label>
+                    <input id="mode-sensory" type="range" min="25" max="180" step="5" value="85" data-out="val-mode-sensory" data-unit="px" />
+                    <span id="val-mode-sensory" class="slider-val">85px</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mode-hebbian">Hebbian learning</label>
+                    <input id="mode-hebbian" type="range" min="0.0" max="0.5" step="0.01" value="0.08" data-out="val-mode-hebbian" />
+                    <span id="val-mode-hebbian" class="slider-val">0.08</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mode-mutation">Mutation rate</label>
+                    <input id="mode-mutation" type="range" min="0.0" max="0.4" step="0.01" value="0.06" data-out="val-mode-mutation" />
+                    <span id="val-mode-mutation" class="slider-val">0.06</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mode-hue">Pigment hue shift</label>
+                    <input id="mode-hue" type="range" min="-180" max="180" step="5" value="0" data-out="val-mode-hue" data-unit="°" />
+                    <span id="val-mode-hue" class="slider-val">0°</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="spawn-count">Seed colony count</label>
+                    <input id="spawn-count" type="range" min="1" max="16" step="1" value="3" data-out="val-spawn-count" />
+                    <span id="val-spawn-count" class="slider-val">3</span>
+                  </div>
+                </div>
+
+                <div class="action-stack">
+                  <button type="button" id="btn-spawn-creature" class="btn btn-primary full-width">Spawn active creature</button>
+                  <div class="btn-row">
+                    <button type="button" id="btn-spawn-center" class="btn">Seed at center</button>
+                    <button type="button" id="btn-randomize-genome" class="btn">Randomize genome</button>
+                    <button type="button" id="btn-genome-io" class="btn">Export / import JSON</button>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <!-- TAB 2: MUTATIONS (Creable & Configurable Mutation Forge) -->
+          <div role="tabpanel" id="panel-mutations" aria-labelledby="tab-mutations" hidden="until-found">
+            <div class="tabpanel-inner">
+              <section class="panel">
+                <div class="panel-head">
+                  <h2 class="panel-title">Custom mutation forge</h2>
+                  <span class="panel-meta">Rule engine</span>
+                </div>
+
+                <div class="field-row">
+                  <label for="mut-rule-slot">Rule slot</label>
+                  <select id="mut-rule-slot" class="select-sm">
+                    <option value="0" selected>Rule #0 · Morphogenesis Drift</option>
+                    <option value="1">Rule #1 · Extremophile Shift</option>
+                    <option value="2">Rule #2 · Neuroplastic Surge</option>
+                    <option value="3">Rule #3 · Custom Slot 4</option>
+                  </select>
+                </div>
+
+                <div class="field-row">
+                  <label for="mut-rule-name">Rule label</label>
+                  <input type="text" id="mut-rule-name" class="input-sm" value="Morphogenesis Drift" />
+                </div>
+
+                <div class="check-row-pair">
+                  <label class="check-label">
+                    <input type="checkbox" id="mut-rule-enabled" checked />
+                    <span>Rule active in simulation</span>
+                  </label>
+                </div>
+
+                <fieldset class="checkbox-fieldset">
+                  <legend>Target gene pathways (bitmask)</legend>
+                  <div class="checkbox-grid">
+                    <label class="check-label"><input type="checkbox" id="mut-target-0" data-mut-bit="0" checked /><span>Split geometry</span></label>
+                    <label class="check-label"><input type="checkbox" id="mut-target-1" data-mut-bit="1" checked /><span>Adhesion bonds</span></label>
+                    <label class="check-label"><input type="checkbox" id="mut-target-2" data-mut-bit="2" /><span>Mode switches</span></label>
+                    <label class="check-label"><input type="checkbox" id="mut-target-3" data-mut-bit="3" checked /><span>Physiology / temp</span></label>
+                    <label class="check-label"><input type="checkbox" id="mut-target-4" data-mut-bit="4" /><span>Armor / CRISPR</span></label>
+                    <label class="check-label"><input type="checkbox" id="mut-target-5" data-mut-bit="5" checked /><span>Neural / plasticity</span></label>
+                    <label class="check-label span-2"><input type="checkbox" id="mut-target-6" data-mut-bit="6" /><span>Secretion / pigment hue</span></label>
+                  </div>
+                </fieldset>
+
+                <div class="slider-stack">
+                  <div class="slider-row">
+                    <label for="mut-bias">Direction bias</label>
+                    <input id="mut-bias" type="range" min="-1.0" max="1.0" step="0.05" value="0.15" data-out="val-mut-bias" />
+                    <span id="val-mut-bias" class="slider-val">0.15</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mut-strength">Drift magnitude</label>
+                    <input id="mut-strength" type="range" min="0.02" max="1.0" step="0.02" value="0.24" data-out="val-mut-strength" />
+                    <span id="val-mut-strength" class="slider-val">0.24</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="mut-prob">Trigger probability</label>
+                    <input id="mut-prob" type="range" min="0.01" max="1.0" step="0.01" value="0.35" data-out="val-mut-prob" />
+                    <span id="val-mut-prob" class="slider-val">0.35</span>
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <label for="mut-trigger">Activation trigger</label>
+                  <select id="mut-trigger" class="select-sm">
+                    <option value="0" selected>0 · On mitosis division</option>
+                    <option value="1">1 · Mutagen radiation field</option>
+                    <option value="2">2 · Thermal stress threshold</option>
+                    <option value="3">3 · Direct micro-injection only</option>
+                  </select>
+                </div>
+
+                <div class="action-stack">
+                  <button type="button" id="btn-save-mutation-rule" class="btn btn-primary full-width">Save / add mutation rule</button>
+                  <div class="btn-row">
+                    <button type="button" id="btn-apply-mutation-cell" class="btn">Mutate selected cell</button>
+                    <button type="button" id="btn-clear-mutation-rules" class="btn">Clear rules</button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-head">
+                  <h3 class="panel-title">Configured mutation rules</h3>
+                  <span id="mut-rules-count" class="panel-meta">Active</span>
+                </div>
+                <div id="mutation-rules-list" class="rules-list" aria-live="polite"></div>
+
+                <div class="panel-head" style="margin-top: 10px;">
+                  <h3 class="panel-title">Live mutation event log</h3>
+                  <span class="panel-meta">Stream</span>
+                </div>
+                <div id="mutation-log" class="event-log" role="log" aria-label="Live genetic mutation log">
+                  <div class="log-entry">Awaiting mitotic or mutagen-induced events...</div>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <!-- TAB 3: VIRUSES (Creable & Configurable Virology Lab) -->
+          <div role="tabpanel" id="panel-viruses" aria-labelledby="tab-viruses" hidden="until-found">
+            <div class="tabpanel-inner">
+              <section class="panel">
+                <div class="panel-head">
+                  <h2 class="panel-title">Virology pathogen designer</h2>
+                  <span id="virus-strain-badge" class="panel-meta">Strain #0</span>
+                </div>
+
+                <div class="field-row">
+                  <label for="virus-strain-select">Active strain</label>
+                  <select id="virus-strain-select" class="select-sm">
+                    <option value="0" selected>Strain #0 · Lytic Phage Alpha</option>
+                    <option value="1">Strain #1 · Lysogenic Provirus Beta</option>
+                    <option value="2">Strain #2 · Oncogenic Mutator Gamma</option>
+                    <option value="3">Strain #3 · Custom Engineered Capsid</option>
+                  </select>
+                </div>
+
+                <div class="field-row">
+                  <label for="virus-name">Strain designation</label>
+                  <div class="inline-pair">
+                    <input type="text" id="virus-name" class="input-sm" value="Lytic Phage Alpha" />
+                    <button type="button" id="btn-new-virus-strain" class="btn">New</button>
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <label for="virus-strategy">Replication strategy</label>
+                  <select id="virus-strategy" class="select-sm">
+                    <option value="0" selected>0 · Lytic (Rapid capsid lysis burst)</option>
+                    <option value="1">1 · Lysogenic (Dormant mitotic inheritance)</option>
+                    <option value="2">2 · Oncogenic Mutator (Neural &amp; DNA hijack)</option>
+                  </select>
+                </div>
+
+                <fieldset class="checkbox-fieldset">
+                  <legend>Host tropism (target cell roles)</legend>
+                  <label class="check-label" style="margin-bottom: 4px;">
+                    <input type="checkbox" id="virus-target-all" checked />
+                    <span>Infect all 12 cell types (pan-tropic)</span>
+                  </label>
+                  <div class="checkbox-grid compact-grid" id="virus-role-checks">
+                    <label class="check-label"><input type="checkbox" id="virus-role-0" data-virus-role="0" checked /><span>Photocyte</span></label>
+                    <label class="check-label"><input type="checkbox" id="virus-role-1" data-virus-role="1" checked /><span>Phagocyte</span></label>
+                    <label class="check-label"><input type="checkbox" id="virus-role-2" data-virus-role="2" checked /><span>Flagellocyte</span></label>
+                    <label class="check-label"><input type="checkbox" id="virus-role-3" data-virus-role="3" checked /><span>Myocyte</span></label>
+                    <label class="check-label"><input type="checkbox" id="virus-role-4" data-virus-role="4" checked /><span>Neurocyte</span></label>
+                    <label class="check-label"><input type="checkbox" id="virus-role-5" data-virus-role="5" checked /><span>Senseocyte</span></label>
+                    <label class="check-label"><input type="checkbox" id="virus-role-6" data-virus-role="6" checked /><span>Immunocyte</span></label>
+                    <label class="check-label"><input type="checkbox" id="virus-role-7" data-virus-role="7" checked /><span>Keratinocyte</span></label>
+                    <label class="check-label"><input type="checkbox" id="virus-role-8" data-virus-role="8" checked /><span>Secreocyte</span></label>
+                    <label class="check-label"><input type="checkbox" id="virus-role-9" data-virus-role="9" checked /><span>Vascularocyte</span></label>
+                    <label class="check-label"><input type="checkbox" id="virus-role-10" data-virus-role="10" checked /><span>Stemocyte</span></label>
+                    <label class="check-label"><input type="checkbox" id="virus-role-11" data-virus-role="11" checked /><span>Scavenger</span></label>
+                  </div>
+                </fieldset>
+
+                <div class="slider-stack">
+                  <div class="slider-row">
+                    <label for="virus-hue">Capsid marker hue</label>
+                    <input id="virus-hue" type="range" min="0" max="220" step="5" value="28" data-out="val-virus-hue" data-unit="°" />
+                    <span id="val-virus-hue" class="slider-val">28°</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="virus-infectivity">Infectivity</label>
+                    <input id="virus-infectivity" type="range" min="0.05" max="1.0" step="0.05" value="0.7" data-out="val-v-inf" />
+                    <span id="val-v-inf" class="slider-val">0.7</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="virus-incubation">Incubation ticks</label>
+                    <input id="virus-incubation" type="range" min="20" max="360" step="10" value="100" data-out="val-v-inc" />
+                    <span id="val-v-inc" class="slider-val">100</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="virus-burst">Burst virions</label>
+                    <input id="virus-burst" type="range" min="2" max="14" step="1" value="6" data-out="val-v-burst" />
+                    <span id="val-v-burst" class="slider-val">6</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="virus-lethality">Cytopathic lethality</label>
+                    <input id="virus-lethality" type="range" min="0.05" max="1.0" step="0.05" value="0.6" data-out="val-v-leth" />
+                    <span id="val-v-leth" class="slider-val">0.6</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="virus-mutation">Antigenic drift</label>
+                    <input id="virus-mutation" type="range" min="0.0" max="0.5" step="0.02" value="0.18" data-out="val-v-mut" />
+                    <span id="val-v-mut" class="slider-val">0.18</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="virus-evasion">CRISPR evasion</label>
+                    <input id="virus-evasion" type="range" min="0.0" max="0.95" step="0.05" value="0.25" data-out="val-v-eva" />
+                    <span id="val-v-eva" class="slider-val">0.25</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="virus-thermal">Thermal stability</label>
+                    <input id="virus-thermal" type="range" min="0.0" max="1.0" step="0.05" value="0.55" data-out="val-v-therm" />
+                    <span id="val-v-therm" class="slider-val">0.55</span>
+                  </div>
+                  <div class="slider-row">
+                    <label for="virus-count">Outbreak dose</label>
+                    <input id="virus-count" type="range" min="5" max="80" step="5" value="25" data-out="val-v-cnt" />
+                    <span id="val-v-cnt" class="slider-val">25</span>
+                  </div>
+                </div>
+
+                <div class="check-row-pair">
+                  <label class="check-label">
+                    <input type="checkbox" id="virus-enveloped" checked />
+                    <span>Lipid-enveloped capsid (sensitive to heat/toxin)</span>
+                  </label>
+                </div>
+
+                <div class="action-stack">
+                  <div class="btn-row">
+                    <button type="button" id="btn-save-virus-strain" class="btn">Save strain</button>
+                    <button type="button" id="btn-set-virus-brush" class="btn">Set active virus brush</button>
+                  </div>
+                  <button type="button" id="btn-virus-center" class="btn btn-danger full-width">Release outbreak burst</button>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <!-- TAB 4: BRAIN X-RAY (Conscious Cell & Telemetry Inspector) -->
+          <div role="tabpanel" id="panel-brain" aria-labelledby="tab-brain" hidden="until-found">
+            <div class="tabpanel-inner">
+              <section class="panel">
+                <div class="panel-head">
+                  <h2 class="panel-title">Conscious cell X-ray</h2>
+                  <div class="inline-badges">
+                    <span id="insp-goal-badge" class="goal-badge">Forage</span>
+                    <span id="insp-id" class="panel-meta">#1</span>
+                  </div>
+                </div>
+
+                <div class="inspector-meta">
+                  <div>Role: <strong id="insp-role">Photocyte</strong></div>
+                  <div>Mode: <strong id="insp-mode">M0</strong></div>
+                  <div>Organism: <strong id="insp-org">#1</strong></div>
+                  <div>Gen: <strong id="insp-gen">1</strong></div>
+                  <div id="insp-lineage" class="span-2 muted-line">Lineage 1 · Age 0 ticks</div>
+                  <div id="insp-thermal" class="span-2">25.0°C (Q10 1.00x · Optimal)</div>
+                </div>
+
+                <div class="bar-stack">
+                  <div class="bar-row">
+                    <div class="bar-head"><span>HP integrity</span><span id="insp-hp-val">100/100</span></div>
+                    <div class="bar-track"><div id="insp-hp-bar" class="bar-fill fill-hp" style="width: 100%;"></div></div>
+                  </div>
+                  <div class="bar-row">
+                    <div class="bar-head"><span>ATP energy reserve</span><span id="insp-atp-val">80/120</span></div>
+                    <div class="bar-track"><div id="insp-atp-bar" class="bar-fill fill-atp" style="width: 67%;"></div></div>
+                  </div>
+                  <div class="bar-row">
+                    <div class="bar-head"><span>Viral capsid load</span><span id="insp-viral-val">0%</span></div>
+                    <div class="bar-track"><div id="insp-viral-bar" class="bar-fill fill-viral" style="width: 0%;"></div></div>
+                  </div>
+                </div>
+
+                <div class="panel-head" style="margin-top: 8px;">
+                  <h3 class="panel-title">Recurrent neural network (12 → 10 → 8)</h3>
+                  <span id="insp-synapse" class="panel-meta">Plasticity active</span>
+                </div>
+                <canvas id="brain-canvas" class="studio-canvas" width="320" height="225" aria-label="Neural network weights and activations"></canvas>
+                <!-- Alias canvas ID for legacy compatibility if referenced -->
+                <canvas id="nn-canvas" class="hidden" width="300" height="225" aria-hidden="true"></canvas>
+
+                <div class="panel-head" style="margin-top: 6px;">
+                  <h3 class="panel-title">Recurrent working memory (4 cells)</h3>
+                  <span class="panel-meta">h(t-1)</span>
+                </div>
+                <div class="memory-grid" id="memory-bars">
+                  <div class="mem-cell">
+                    <div class="mem-head"><span>M0</span><span id="mem-val-0">0.00</span></div>
+                    <div class="bar-track"><div id="mem-bar-0" class="bar-fill fill-mem" style="width: 50%;"></div></div>
+                  </div>
+                  <div class="mem-cell">
+                    <div class="mem-head"><span>M1</span><span id="mem-val-1">0.00</span></div>
+                    <div class="bar-track"><div id="mem-bar-1" class="bar-fill fill-mem" style="width: 50%;"></div></div>
+                  </div>
+                  <div class="mem-cell">
+                    <div class="mem-head"><span>M2</span><span id="mem-val-2">0.00</span></div>
+                    <div class="bar-track"><div id="mem-bar-2" class="bar-fill fill-mem" style="width: 50%;"></div></div>
+                  </div>
+                  <div class="mem-cell">
+                    <div class="mem-head"><span>M3</span><span id="mem-val-3">0.00</span></div>
+                    <div class="bar-track"><div id="mem-bar-3" class="bar-fill fill-mem" style="width: 50%;"></div></div>
+                  </div>
+                </div>
+
+                <div class="panel-head" style="margin-top: 8px;">
+                  <h3 class="panel-title">Genome &amp; CRISPR immunity</h3>
+                  <span id="insp-crispr" class="panel-meta">CRISPR: 0000</span>
+                </div>
+                <div class="dna-grid">
+                  <div>T_opt: <strong id="dna-topt">25.0°C ±18</strong></div>
+                  <div>Metabolism: <strong id="dna-met">1.00x</strong></div>
+                  <div>Armor: <strong id="dna-armor">30%</strong></div>
+                  <div>Adhesion: <strong id="dna-adh">65%</strong></div>
+                  <div>CRISPR res: <strong id="dna-imm">45%</strong></div>
+                  <div>Mut rate: <strong id="dna-mut">6.0%</strong></div>
+                  <div>Hebbian η: <strong id="dna-hebb">0.08</strong></div>
+                  <div>Bonds: <strong id="insp-bonds">0</strong></div>
+                  <div class=" hidden">Bias: <strong id="dna-bias">0.00</strong></div>
+                </div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-head">
+                  <h3 class="panel-title">Population &amp; lineage dynamics</h3>
+                  <span class="panel-meta">140-window</span>
+                </div>
+                <canvas id="pop-canvas" class="spark-canvas" width="320" height="104" aria-label="Cell population and virion history chart"></canvas>
+                <canvas id="pop-sparkline" class="hidden" width="300" height="92" aria-hidden="true"></canvas>
+
+                <div class="panel-head" style="margin-top: 6px;">
+                  <h3 class="panel-title">Trait adaptation (T_opt / CRISPR / Adhesion)</h3>
+                  <span class="panel-meta">Mean</span>
+                </div>
+                <canvas id="evo-sparkline" class="spark-canvas" width="320" height="88" aria-label="Evolutionary trait adaptation chart"></canvas>
+              </section>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
     </aside>
   </main>
+
+  <!-- MODAL 1: Organism Blueprint & Genome JSON Import/Export -->
+  <dialog id="genome-modal" closedby="any" aria-labelledby="genome-modal-title">
+    <div class="modal-shell">
+      <div class="modal-head">
+        <h2 id="genome-modal-title">Organism genome blueprint (JSON)</h2>
+        <form method="dialog">
+          <button type="submit" id="btn-close-genome-modal" class="btn">Close</button>
+        </form>
+      </div>
+      <p class="modal-desc">
+        Inspect, copy, or paste a complete 8-mode multicellular organism genome (`M0..M7` roles, split angles, adhesion stiffness, and metabolic traits).
+      </p>
+      <label class="sr-only" for="genome-json-input">Organism genome JSON</label>
+      <textarea id="genome-json-input" class="code-textarea" rows="12" spellcheck="false"></textarea>
+      <div id="genome-json-status" class="modal-status" aria-live="polite"></div>
+      <div class="modal-actions">
+        <button type="button" id="btn-copy-genome-json" class="btn">Copy JSON</button>
+        <button type="button" id="btn-apply-genome-json" class="btn btn-primary">Import &amp; register genome</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- MODAL 2: Biological Field Guide -->
+  <dialog id="guide-modal" closedby="any" aria-labelledby="guide-modal-title">
+    <div class="modal-shell modal-wide">
+      <div class="modal-head">
+        <h2 id="guide-modal-title">Biological laboratory field guide</h2>
+        <form method="dialog">
+          <button type="submit" id="btn-close-guide-modal" class="btn" autofocus>Close</button>
+        </form>
+      </div>
+      <div class="guide-grid">
+        <div class="guide-block">
+          <h3>12 Differentiated Cell Types</h3>
+          <ul class="guide-list">
+            <li><strong>Photocyte:</strong> Converts solar light intensity into ATP energy.</li>
+            <li><strong>Phagocyte:</strong> Predatory jaws that engulf and lyse non-kin cells.</li>
+            <li><strong>Flagellocyte:</strong> Undulating motile tail generating forward thrust.</li>
+            <li><strong>Myocyte:</strong> Contractile muscle fiber flexing multicellular bond angles.</li>
+            <li><strong>Neurocyte:</strong> High-plasticity pacemaker relaying synaptic pulses across bonds.</li>
+            <li><strong>Senseocyte:</strong> Long-range optical and chemosensory receptor cone.</li>
+            <li><strong>Immunocyte:</strong> Secretes neutralizing antibodies and acquires CRISPR strain memory.</li>
+            <li><strong>Keratinocyte:</strong> Hexagonal armored epidermis deflecting predation and virions.</li>
+            <li><strong>Secreocyte:</strong> Exocrine gland emitting pheromones, antibodies, toxins, or mucus.</li>
+            <li><strong>Vascularocyte:</strong> Pumps ATP and metabolites across connected tissue bonds.</li>
+            <li><strong>Stemocyte:</strong> Pluripotent progenitor driving rapid M0–M7 differentiation.</li>
+            <li><strong>Scavenger:</strong> Digests cellular detritus and neutralizes ambient toxins.</li>
+          </ul>
+        </div>
+        <div class="guide-block">
+          <h3>Embryonic Modes, Brains &amp; Virology</h3>
+          <ul class="guide-list">
+            <li><strong>Multi-Mode Development (M0–M7):</strong> When a cell reaches its split mass, it divides along its configured split angle into Daughter A (`child_a_mode`) and Daughter B (`child_b_mode`), forming spring adhesion bonds.</li>
+            <li><strong>Recurrent Hebbian Brain (12→10→8):</strong> Each cell runs a 12-sensor, 10-hidden, 8-effector neural network with 4 recurrent working-memory cells and online reward-modulated Hebbian weight adaptation.</li>
+            <li><strong>Viral Strategies:</strong> <em>Lytic</em> phages replicate rapidly and burst the host; <em>Lysogenic</em> proviruses integrate into daughter cells during mitosis before activating; <em>Oncogenic Mutators</em> rewire host neural weights and accelerate genome drift.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </dialog>
 
   <script type="module" src="./app.js"></script>
 </body>

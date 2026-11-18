@@ -1,4 +1,6 @@
 /target/
 /_site/
+Cargo.lock
+.taste-skill/
 *.swp
 .DS_Store
